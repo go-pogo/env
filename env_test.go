@@ -8,6 +8,43 @@ import (
 	"github.com/roeldev/go-fail"
 )
 
+func TestMap_Merge(t *testing.T) {
+	tests := map[string]struct {
+		env   Map
+		merge map[string]string
+		want  Map
+	}{
+		"append": {
+			env:   Map{"foo": "bar"},
+			merge: map[string]string{"qux": "xoo"},
+			want:  Map{"foo": "bar", "qux": "xoo"},
+		},
+		"replace": {
+			env:   Map{"foo": "bar", "qux": "xoo"},
+			merge: map[string]string{"qux": "bar", "foo": "xoo"},
+			want:  Map{"foo": "xoo", "qux": "bar"},
+		},
+		"merge": {
+			env:   Map{"foo": "bar", "bar": "baz"},
+			merge: map[string]string{"baz": "foo", "bar": "qux"},
+			want:  Map{"foo": "bar", "bar": "qux", "baz": "foo"},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			tc.env.Merge(tc.merge)
+			if !cmp.Equal(tc.env, tc.want) {
+				t.Error(fail.Diff{
+					Func: "Map.Merge",
+					Have: tc.env,
+					Want: tc.want,
+				})
+			}
+		})
+	}
+}
+
 func TestEnviron(t *testing.T) {
 	env := Environ()
 	if len(os.Environ()) != len(env) {
