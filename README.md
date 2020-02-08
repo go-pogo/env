@@ -17,7 +17,8 @@ go-env
 [go-doc-url]: https://pkg.go.dev/github.com/roeldev/go-env
 [go-version-img]: https://img.shields.io/github/go-mod/go-version/roeldev/go-env
 
-This package provides functions to more easily use environment variables. It does not matter of these come from `os.Environ()`, CLI arguments or a .env file. 
+Go package for parsing environment variables. It can be used to read from any `io.Reader`, `os.Environ()` or (CLI) arguments.
+
 
 ## Install
 ```sh

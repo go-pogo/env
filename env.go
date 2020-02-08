@@ -15,7 +15,7 @@ const (
 	runeHash    = 35 // #
 )
 
-// Map represents a map of env key value pairs.
+// Map represents a map of key value pairs.
 type Map map[string]string
 
 func (m Map) parse(env string) bool {
@@ -28,14 +28,14 @@ func (m Map) parse(env string) bool {
 	return false
 }
 
-// Merge any map of strings with this Map.
+// Merge any map of strings into this Map.
 func (m Map) Merge(e map[string]string) {
 	for k, v := range e {
 		m[k] = v
 	}
 }
 
-// Environ returns a `Map` with the os' current environment variables.
+// Environ returns a `Map` with the parsed environment variables of `os.Environ()`.
 func Environ() (Map, int) {
 	s := os.Environ()
 	m := make(Map, len(s))
@@ -43,7 +43,7 @@ func Environ() (Map, int) {
 	return m, n
 }
 
-// Read from an `io.Reader`, parse its results and parse them to the provided Map. Each line is
+// Read from an `io.Reader`, parse its results and add them to the provided Map. Each line is
 // cleaned before being parsed with `ParsePair`.
 // It returns the number of parsed lines and any error that occurs while scanning for lines.
 func Read(r io.Reader, dest Map) (int, error) {
@@ -63,9 +63,9 @@ func Read(r io.Reader, dest Map) (int, error) {
 	return n, errs.Wrap(scanner.Err())
 }
 
-// ParseSlice parses a slice of strings to a map with key value pairs. The slice should be clean,
-// entries are not checked on starting/trailing whitespace or comment tags.
-// It returns the number of parsed lines.
+// ParseSlice parses a slice of strings to the provided `Map`. The slice should be clean, entries
+// are not checked on starting/trailing whitespace or comment tags.
+// As a result, it returns the number of successfully parsed strings.
 func ParseSlice(env []string, dest Map) (n int) {
 	for _, e := range env {
 		if dest.parse(e) {
@@ -76,7 +76,8 @@ func ParseSlice(env []string, dest Map) (n int) {
 	return n
 }
 
-// ParseFlagArgs parses the
+// ParseFlagArgs parses an arguments slice of strings to the provided `Map`.
+// As a result, it returns the number of successfully parsed arguments.
 func ParseFlagArgs(flag string, args []string, dest Map) (n int) {
 	if flag == "" || len(args) == 0 {
 		return 0
@@ -87,6 +88,7 @@ func ParseFlagArgs(flag string, args []string, dest Map) (n int) {
 
 	nextIsPair := false
 	for _, arg := range args {
+		arg = strings.TrimSpace(arg)
 		if nextIsPair && arg[0] != '-' {
 			if dest.parse(arg) {
 				n++
