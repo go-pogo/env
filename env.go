@@ -18,36 +18,27 @@ const (
 // Map represents a map of env key value pairs.
 type Map map[string]string
 
-// Merge any map of strings with the env map.
-func (m Map) Merge(e map[string]string) error {
+// Merge any map of strings with this Map.
+func (m Map) Merge(e map[string]string) {
 	for k, v := range e {
 		m[k] = v
 	}
-	return nil
 }
 
-// Environ returns a `Map` with the os' current env variables.
+// Environ returns a `Map` with the os' current environment variables.
 func Environ() Map {
-	return Transform(os.Environ())
+	s := os.Environ()
+	m := make(Map, len(s))
+	ParseSlice(s, m)
+	return m
 }
 
-// Transform a slice of strings to a map with key value pairs. The slice should
-// be clean, entries are not checked on starting/trailing whitespace or comment
-// tags.
-func Transform(env []string) Map {
-	res := make(Map, len(env))
-	for _, e := range env {
-		key, val := SplitPair(e)
-		res[key] = val
-	}
+// Read from an `io.Reader`, parse its results and add them to the provided Map. Each line is
+// cleaned before being parsed with `ParsePair`.
+// It returns the number of parsed lines and any error that occurs while scanning for lines.
+func Read(r io.Reader, dest Map) (int, error) {
+	n := 0
 
-	return res
-}
-
-// Read from an `io.Reader` and parse its results. Each line is cleaned before
-// being parsed with `SplitPair`.
-func Read(r io.Reader) (Map, error) {
-	res := make(Map, 0)
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -55,16 +46,32 @@ func Read(r io.Reader) (Map, error) {
 			continue // skip empty lines and comments
 		}
 
-		key, val := SplitPair(cleanLine(line))
+		key, val := ParsePair(cleanLine(line))
 		if key != "" && val != "" {
-			res[key] = val
+			dest[key] = val
+			n++
 		}
 	}
 
-	return res, errs.Wrap(scanner.Err())
+	return n, errs.Wrap(scanner.Err())
 }
 
-func SplitPair(pair string) (key string, val string) {
+// ParseSlice parses a slice of strings to a map with key value pairs. The slice should be clean,
+// entries are not checked on starting/trailing whitespace or comment tags.
+// It returns the number of parsed lines.
+func ParseSlice(env []string, dest Map) int {
+	n := 0
+	for _, e := range env {
+		key, val := ParsePair(e)
+		dest[key] = val
+		n++
+	}
+
+	return n
+}
+
+// ParsePair parses an environment variable's paired key and value and returns the separated values.
+func ParsePair(pair string) (key string, val string) {
 	// environment variables can begin with = so start splitting after the
 	// first character
 	split := strings.SplitAfterN(pair[1:], "=", 2)

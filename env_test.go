@@ -24,7 +24,8 @@ func TestRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	have, err := Read(f)
+	have := make(Map)
+	_, err = Read(f, have)
 	_ = f.Close()
 
 	if err != nil {
@@ -49,7 +50,7 @@ func TestRead(t *testing.T) {
 	}
 }
 
-func TestSplitPair(t *testing.T) {
+func TestParsePair(t *testing.T) {
 	tests := map[string][2]string{
 		"=::=::":         {"=::", "::"}, // legit windows entry
 		"foo=bar":        {"foo", "bar"},
@@ -62,10 +63,10 @@ func TestSplitPair(t *testing.T) {
 
 	for input, want := range tests {
 		t.Run(input, func(t *testing.T) {
-			key, val := SplitPair(input)
+			key, val := ParsePair(input)
 			if key != want[0] || val != want[1] {
 				t.Error(fail.Diff{
-					Func: "SplitPair",
+					Func: "ParsePair",
 					Have: [2]string{key, val},
 					Want: want,
 				})
