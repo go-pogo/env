@@ -46,8 +46,8 @@ func TestMap_Merge(t *testing.T) {
 }
 
 func TestEnviron(t *testing.T) {
-	env := Environ()
-	if len(os.Environ()) != len(env) {
+	have, n := Environ()
+	if n != len(os.Environ()) || n != len(have) {
 		t.Error(fail.Msg{
 			Func: "Environ",
 			Msg:  "all entries of `os.Environ()` should be present",
@@ -62,7 +62,7 @@ func TestRead(t *testing.T) {
 	}
 
 	have := make(Map)
-	_, err = Read(f, have)
+	n, err := Read(f, have)
 	_ = f.Close()
 
 	if err != nil {
@@ -83,6 +83,80 @@ func TestRead(t *testing.T) {
 			Func: "Read",
 			Have: have,
 			Want: want,
+		})
+	}
+	if len(want) != n {
+		t.Error(fail.Diff{
+			Func: "Read",
+			Msg:  "return value should be the number of parsed items",
+			Have: n,
+			Want: len(want),
+		})
+	}
+}
+
+func TestParseFlagArgs(t *testing.T) {
+	tests := map[string]struct {
+		flag string
+		args []string
+		want Map
+	}{
+		"empty": {
+			flag: "e",
+			args: []string{},
+			want: Map{},
+		},
+		"none": {
+			flag: "e",
+			args: []string{"-a", "-e", "-b=1", "-c", "2", "-e"},
+			want: Map{},
+		},
+		"single dash": {
+			flag: "e",
+			args: []string{"-e=foo=bar"},
+			want: Map{"foo": "bar"},
+		},
+		"single dash next arg": {
+			flag: "env",
+			args: []string{"-env", "foo=bar"},
+			want: Map{"foo": "bar"},
+		},
+		"single double dash": {
+			flag: "env",
+			args: []string{"--env=qux=xoo"},
+			want: Map{"qux": "xoo"},
+		},
+		"single double dash next arg": {
+			flag: "e",
+			args: []string{"--e", "qux=xoo"},
+			want: Map{"qux": "xoo"},
+		},
+		"mixed": {
+			flag: "e",
+			args: []string{"-e", "foo=bar", "-e=empty", "bar", "--e=qux=xoo", "-e", "bar=baz", "--skip", "-e"},
+			want: Map{"foo": "bar", "qux": "xoo", "bar": "baz"},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			have := make(Map)
+			n := ParseFlagArgs(tc.flag, tc.args, have)
+			if !cmp.Equal(have, tc.want) {
+				t.Error(fail.Diff{
+					Func: "ParseFlagArgs",
+					Have: have,
+					Want: tc.want,
+				})
+			}
+			if n != len(tc.want) {
+				t.Error(fail.Diff{
+					Func: "ParseFlagArgs",
+					Msg:  "return value should be the number of parsed items",
+					Have: n,
+					Want: len(tc.want),
+				})
+			}
 		})
 	}
 }

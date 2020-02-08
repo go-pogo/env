@@ -18,6 +18,16 @@ const (
 // Map represents a map of env key value pairs.
 type Map map[string]string
 
+func (m Map) parse(env string) bool {
+	key, val := ParsePair(env)
+	if key != "" && val != "" {
+		m[key] = val
+		return true
+	}
+
+	return false
+}
+
 // Merge any map of strings with this Map.
 func (m Map) Merge(e map[string]string) {
 	for k, v := range e {
@@ -26,14 +36,14 @@ func (m Map) Merge(e map[string]string) {
 }
 
 // Environ returns a `Map` with the os' current environment variables.
-func Environ() Map {
+func Environ() (Map, int) {
 	s := os.Environ()
 	m := make(Map, len(s))
-	ParseSlice(s, m)
-	return m
+	n := ParseSlice(s, m)
+	return m, n
 }
 
-// Read from an `io.Reader`, parse its results and add them to the provided Map. Each line is
+// Read from an `io.Reader`, parse its results and parse them to the provided Map. Each line is
 // cleaned before being parsed with `ParsePair`.
 // It returns the number of parsed lines and any error that occurs while scanning for lines.
 func Read(r io.Reader, dest Map) (int, error) {
@@ -45,10 +55,7 @@ func Read(r io.Reader, dest Map) (int, error) {
 		if line == "" || line[0] == runeHash {
 			continue // skip empty lines and comments
 		}
-
-		key, val := ParsePair(cleanLine(line))
-		if key != "" && val != "" {
-			dest[key] = val
+		if dest.parse(cleanLine(line)) {
 			n++
 		}
 	}
@@ -59,12 +66,48 @@ func Read(r io.Reader, dest Map) (int, error) {
 // ParseSlice parses a slice of strings to a map with key value pairs. The slice should be clean,
 // entries are not checked on starting/trailing whitespace or comment tags.
 // It returns the number of parsed lines.
-func ParseSlice(env []string, dest Map) int {
-	n := 0
+func ParseSlice(env []string, dest Map) (n int) {
 	for _, e := range env {
-		key, val := ParsePair(e)
-		dest[key] = val
-		n++
+		if dest.parse(e) {
+			n++
+		}
+	}
+
+	return n
+}
+
+// ParseFlagArgs parses the
+func ParseFlagArgs(flag string, args []string, dest Map) (n int) {
+	if flag == "" || len(args) == 0 {
+		return 0
+	}
+
+	sd, dd := "-"+flag, "--"+flag
+	sdl, ddl := len(sd), len(dd)
+
+	nextIsPair := false
+	for _, arg := range args {
+		if nextIsPair && arg[0] != '-' {
+			if dest.parse(arg) {
+				n++
+			}
+			nextIsPair = false
+			continue
+		}
+
+		if strings.Index(arg, sd) == 0 {
+			if len(arg) == sdl {
+				nextIsPair = true
+			} else if dest.parse(arg[sdl+1:]) {
+				n++
+			}
+		} else if strings.Index(arg, dd) == 0 {
+			if len(arg) == ddl {
+				nextIsPair = true
+			} else if dest.parse(arg[ddl+1:]) {
+				n++
+			}
+		}
 	}
 
 	return n
