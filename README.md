@@ -5,6 +5,7 @@ go-env
 [![Travis build status][travis-build-img]][travis-build-url]
 [![Go Report Card][go-report-img]][go-report-url]
 [![GoDoc documentation][go-doc-img]][go-doc-url]
+![Minimal Go version][go-version-img]
 
 [latest-release-img]: https://img.shields.io/github/release/roeldev/go-env.svg?label=latest
 [latest-release-url]: https://github.com/roeldev/go-env/releases
@@ -13,7 +14,8 @@ go-env
 [go-report-img]: https://goreportcard.com/badge/github.com/roeldev/go-env
 [go-report-url]: https://goreportcard.com/report/github.com/roeldev/go-env
 [go-doc-img]: https://godoc.org/github.com/roeldev/go-env?status.svg
-[go-doc-url]: https://godoc.org/github.com/roeldev/go-env
+[go-doc-url]: https://pkg.go.dev/github.com/roeldev/go-env
+[go-version-img]: https://img.shields.io/github/go-mod/go-version/roeldev/go-env
 
 This package provides functions to more easily use environment variables. It does not matter of these come from `os.Environ()`, CLI arguments or a .env file. 
 
