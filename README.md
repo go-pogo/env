@@ -31,9 +31,25 @@ go get github.com/roeldev/go-env
 import "github.com/roeldev/go-env"
 ```
 
+## Usage
+
+### Reading a .env file
+``go
+func main() {
+}
+``
+
+### CLI arguments
+
+## Supported formats
+
+- `key=value`; value without quotes
+- `key="value"`; value with double quotes
+- `key='value'`; value with single quotes
+
 
 ## Documentation
-Additional detailed documentation is available at [godoc.org][go-doc-url]
+Additional detailed documentation is available at [go.dev][go-doc-url]
 
 
 ### Created with

@@ -28,9 +28,9 @@ func (m Map) parse(env string) bool {
 	return false
 }
 
-// Merge any map of strings into this Map.
-func (m Map) Merge(e map[string]string) {
-	for k, v := range e {
+// Merge any map of strings into this `Map`.
+func (m Map) Merge(src map[string]string) {
+	for k, v := range src {
 		m[k] = v
 	}
 }
@@ -44,7 +44,7 @@ func Environ() (Map, int) {
 }
 
 // Read from an `io.Reader`, parse its results and add them to the provided Map. Each line is
-// cleaned before being parsed with `ParsePair`.
+// sanitized before being parsed with `ParsePair`.
 // It returns the number of parsed lines and any error that occurs while scanning for lines.
 func Read(r io.Reader, dest Map) (int, error) {
 	n := 0
@@ -144,6 +144,7 @@ func ParsePair(pair string) (key string, val string) {
 	return
 }
 
+// todo: remove # comments at end of line
 func cleanLine(line string) string {
 	return line
 }
