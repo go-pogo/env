@@ -2,36 +2,21 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/roeldev/go-env"
 )
 
 func main() {
-	var err error
-	defer func() {
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	path, err := filepath.Abs("test.env")
 	if err != nil {
-		return
+		panic(err)
 	}
-
-	f, err := os.Open(path)
-	if err != nil {
-		return
-	}
-
-	defer f.Close()
 
 	envs := make(env.Map)
-	n, err := env.Read(f, envs)
+	n, err := env.Open(path, envs)
 	if err != nil {
-		return
+		panic(err)
 	}
 
 	fmt.Println("Env vars parsed:", n)

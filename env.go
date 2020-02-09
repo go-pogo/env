@@ -43,6 +43,19 @@ func Environ() (Map, int) {
 	return m, n
 }
 
+// Open a file and read it with `Read()`.
+// It returns the number of parsed lines and any error that occurred.
+func Open(path string, dest Map) (int, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return 0, errs.Wrap(err)
+	}
+
+	defer f.Close()
+	n, err := Read(f, dest)
+	return n, errs.Wrap(err)
+}
+
 // Read from an `io.Reader`, parse its results and add them to the provided Map. Each line is
 // sanitized before being parsed with `ParsePair`.
 // It returns the number of parsed lines and any error that occurs while scanning for lines.

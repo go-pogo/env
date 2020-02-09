@@ -2,6 +2,7 @@ package env
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -55,16 +56,67 @@ func TestEnviron(t *testing.T) {
 	}
 }
 
-func TestRead(t *testing.T) {
-	f, err := os.Open("test.env")
+func TestOpen_unexisting_file(t *testing.T) {
+	have := make(Map)
+	n, err := Open("doesnot.exist", have)
+
+	if err == nil {
+		t.Error(fail.Msg{
+			Func: "Open",
+			Msg:  "expecting an error when trying to open a file that does not exist",
+		})
+	}
+	if n != 0 {
+		t.Error(fail.Diff{
+			Func: "Open",
+			Msg:  "should return 0 parsed lines",
+			Have: n,
+			Want: 0,
+		})
+	}
+}
+
+func TestOpen(t *testing.T) {
+	have := make(Map)
+	n, err := Open("test.env", have)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(fail.Err{
+			Func: "Open",
+			Err:  err,
+		})
 	}
 
-	have := make(Map)
-	n, err := Read(f, have)
-	_ = f.Close()
+	want := Map{
+		"FOO": "bar",
+		"bar": "baz",
+		"qux": "#xoo",
+	}
 
+	if !cmp.Equal(have, want) {
+		t.Error(fail.Diff{
+			Func: "Open",
+			Have: have,
+			Want: want,
+		})
+	}
+	if len(want) != n {
+		t.Error(fail.Diff{
+			Func: "Open",
+			Msg:  "return value should be the number of parsed items",
+			Have: n,
+			Want: len(want),
+		})
+	}
+}
+
+func TestRead(t *testing.T) {
+	r := strings.NewReader(`FOO=bar
+bar='baz'
+qux="#xoo"
+`)
+
+	have := make(Map)
+	n, err := Read(r, have)
 	if err != nil {
 		t.Fatal(fail.Err{
 			Func: "Read",
