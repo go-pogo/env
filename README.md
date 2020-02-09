@@ -31,21 +31,47 @@ go get github.com/roeldev/go-env
 import "github.com/roeldev/go-env"
 ```
 
-## Usage
-
-### Reading a .env file
-``go
-func main() {
-}
-``
-
-### CLI arguments
-
-## Supported formats
-
+## Reading a file
+It is possible to read from any `io.Reader` or open a file and parse its contents. Supported formats:
 - `key=value`; value without quotes
 - `key="value"`; value with double quotes
 - `key='value'`; value with single quotes
+
+Code example:
+```go
+func main() {
+    // open and read file
+    envs := make(env.Map)
+    _, err := os.Open(".env", envs)
+    if err != nil {
+        // handle error
+    }
+
+    // use envs any way you like
+}
+```
+
+## CLI arguments
+Get environment variables from `os.Args`. Supported formats:
+- `-e=key=val`; flag with single dash
+- `-e key=val`
+- `--e=key=val`; flag with double dash
+- `--e key=val`
+
+The args slice may have multiple entries for the same flag, eg:
+```go
+[]string{"-e", "key=val", "-someFlag", "-e", "another=env var"}
+```
+
+Code example:
+```go
+func main() {
+    envs := make(env.Map)
+    n := env.ParseFlagArgs("e", os.Args[1:], envs)
+    
+    // use envs any way you like
+}
+```
 
 
 ## Documentation
