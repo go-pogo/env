@@ -10,10 +10,14 @@ cli_args: |
   go build -o example.exe github.com/roeldev/go-env/examples/cli_args
   ./example.exe -e=foo=bar --e "qux=xoo xoo" -e
 
+open_dotenv: |
+  go build -o example.exe github.com/roeldev/go-env/examples/open_dotenv
+  ./example.exe
+
 os_environ: |
   go build -o example.exe github.com/roeldev/go-env/examples/os_environ
   ./example.exe
 
-read_dotenv: |
-  go build -o example.exe github.com/roeldev/go-env/examples/read_dotenv
+read_ioreader: |
+  go build -o example.exe github.com/roeldev/go-env/examples/read_ioreader
   ./example.exe
