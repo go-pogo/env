@@ -2,22 +2,16 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
+	"strings"
 
 	"github.com/roeldev/go-env"
 )
 
 func main() {
-	path, err := filepath.Abs("test.env")
-	if err != nil {
-		panic(err)
-	}
-
-	reader, err := os.Open(path)
-	if err != nil {
-		panic(err)
-	}
+	reader := strings.NewReader(`
+foo=bar
+qux=xoo
+`)
 
 	envs := make(env.Map)
 	n, err := env.Read(reader, envs)
