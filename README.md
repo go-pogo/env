@@ -35,15 +35,15 @@ It is possible to read from any `io.Reader` or open a file and parse its content
 
 ```go
 func main() {
-    // create Map to store results
-    envs := make(env.Map)
-    // open file, parse it and store results
-    _, err := env.Open(".env", envs)
-    if err != nil {
-        // handle error
-    }
+	// create Map to store results
+	envs := make(env.Map)
+	// open file, parse it and store results
+	_, err := env.Open(".env", envs)
+	if err != nil {
+		// handle error
+	}
 
-    // use envs any way you like
+	// use envs any way you like
 }
 ```
 
@@ -52,18 +52,18 @@ It is possible to read from any `io.Reader`. Supported formats are the same as w
 
 ```go
 func main() {
-    // somehow get a reader
-    // reader := strings.NewReader(str)
+	// somehow get a reader
+	// reader := strings.NewReader(str)
 
-    // create Map to store results
+	// create Map to store results
 	envs := make(env.Map)
-    // read + parse from reader and store results
+	// read + parse from reader and store results
 	_, err := env.Read(reader, envs)
-    if err != nil {
-        // handle error
-    }
+	if err != nil {
+		// handle error
+	}
 
-    // use envs any way you like
+	// use envs any way you like
 }
 ```
 
@@ -76,12 +76,12 @@ It is possible to extract environment variables from `os.Args`. Supported input 
 
 ```go
 func main() {
-    // create Map to store results
-    envs := make(env.Map)
-    // parse flags and store them in the provided Map
-    n := env.ParseFlagArgs("e", os.Args[1:], envs)
-    
-    // use envs any way you like
+	// create Map to store results
+	envs := make(env.Map)
+	// parse flags and store them in the provided Map
+	n := env.ParseFlagArgs("e", os.Args[1:], envs)
+	
+	// use envs any way you like
 }
 ```
 The args slice may have multiple entries for the same flag provided by CLI arguments, eg:
