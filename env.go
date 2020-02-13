@@ -18,16 +18,6 @@ const (
 // Map represents a map of key value pairs.
 type Map map[string]string
 
-func (m Map) parse(env string) bool {
-	key, val := ParsePair(env)
-	if key != "" && val != "" {
-		m[key] = val
-		return true
-	}
-
-	return false
-}
-
 // Merge any map of strings into this `Map`.
 func (m Map) Merge(src map[string]string) {
 	for k, v := range src {
@@ -51,12 +41,13 @@ func Open(path string, dest Map) (int, error) {
 		return 0, errs.Wrap(err)
 	}
 
+	//noinspection GoUnhandledErrorResult
 	defer f.Close()
 	n, err := Read(f, dest)
 	return n, errs.Wrap(err)
 }
 
-// Read from an `io.Reader`, parse its results and add them to the provided Map. Each line is
+// Read from an `io.Reader`, parseAndAdd its results and add them to the provided Map. Each line is
 // sanitized before being parsed with `ParsePair`.
 // It returns the number of parsed lines and any error that occurs while scanning for lines.
 func Read(r io.Reader, dest Map) (int, error) {
@@ -68,7 +59,7 @@ func Read(r io.Reader, dest Map) (int, error) {
 		if line == "" || line[0] == runeHash {
 			continue // skip empty lines and comments
 		}
-		if dest.parse(cleanLine(line)) {
+		if parseAndAdd(dest, cleanLine(line)) {
 			n++
 		}
 	}
@@ -81,7 +72,7 @@ func Read(r io.Reader, dest Map) (int, error) {
 // As a result, it returns the number of successfully parsed strings.
 func ParseSlice(env []string, dest Map) (n int) {
 	for _, e := range env {
-		if dest.parse(e) {
+		if parseAndAdd(dest, e) {
 			n++
 		}
 	}
@@ -103,7 +94,7 @@ func ParseFlagArgs(flag string, args []string, dest Map) (n int) {
 	for _, arg := range args {
 		arg = strings.TrimSpace(arg)
 		if nextIsPair && arg[0] != '-' {
-			if dest.parse(arg) {
+			if parseAndAdd(dest, arg) {
 				n++
 			}
 			nextIsPair = false
@@ -113,13 +104,13 @@ func ParseFlagArgs(flag string, args []string, dest Map) (n int) {
 		if strings.Index(arg, sd) == 0 {
 			if len(arg) == sdl {
 				nextIsPair = true
-			} else if dest.parse(arg[sdl+1:]) {
+			} else if parseAndAdd(dest, arg[sdl+1:]) {
 				n++
 			}
 		} else if strings.Index(arg, dd) == 0 {
 			if len(arg) == ddl {
 				nextIsPair = true
-			} else if dest.parse(arg[ddl+1:]) {
+			} else if parseAndAdd(dest, arg[ddl+1:]) {
 				n++
 			}
 		}
@@ -149,7 +140,7 @@ func ParsePair(pair string) (key string, val string) {
 
 	last := len(val) - 1
 
-	// remove optional double quotes from string
+	// remove optional single/double quotes from string
 	if (val[0] == runeDblQuot || val[0] == runeQuot) && val[0] == val[last] {
 		val = val[1:last]
 	}
@@ -160,4 +151,14 @@ func ParsePair(pair string) (key string, val string) {
 // todo: remove # comments at end of line
 func cleanLine(line string) string {
 	return line
+}
+
+func parseAndAdd(dest Map, env string) bool {
+	key, val := ParsePair(env)
+	if key != "" && val != "" {
+		dest[key] = val
+		return true
+	}
+
+	return false
 }
