@@ -155,7 +155,7 @@ func cleanLine(line string) string {
 
 func parseAndAdd(dest Map, env string) bool {
 	key, val := ParsePair(env)
-	if key != "" && val != "" {
+	if key != "" {
 		dest[key] = val
 		return true
 	}

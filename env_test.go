@@ -1,6 +1,7 @@
 package env
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -47,11 +48,29 @@ func TestMap_Merge(t *testing.T) {
 }
 
 func TestEnviron(t *testing.T) {
-	have, n := Environ()
-	if n != len(os.Environ()) || n != len(have) {
-		t.Error(fail.Msg{
+	m, n := Environ()
+	want := os.Environ()
+
+	if n != len(want) || n != len(m) {
+		have := make([]string, 0, n)
+
+		// loop trough the original environ list as this is in the
+		// "proper" order
+		for _, w := range want {
+			k, _ := ParsePair(w)
+			v, ok := m[k]
+			if !ok {
+				v = "!!MISSING!!"
+			}
+
+			have = append(have, k+"="+v)
+		}
+
+		t.Error(fail.Diff{
 			Func: "Environ",
-			Msg:  "all entries of `os.Environ()` should be present",
+			Msg:  fmt.Sprintf("all entries of `os.Environ()` should be present [%d/%d]", n, len(want)),
+			Have: have,
+			Want: want,
 		})
 	}
 }
