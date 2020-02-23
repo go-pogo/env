@@ -53,7 +53,16 @@ func TestEnviron(t *testing.T) {
 
 	if n != len(want) || n != len(m) {
 		have := make([]string, 0, n)
-		for k, v := range m {
+
+		// loop trough the original environ list as this is in the
+		// "proper" order
+		for _, w := range want {
+			k, _ := ParsePair(w)
+			v, ok := m[k]
+			if !ok {
+				v = "!!MISSING!!"
+			}
+
 			have = append(have, k+"="+v)
 		}
 
