@@ -49,9 +49,11 @@ func TestMap_Merge(t *testing.T) {
 func TestEnviron(t *testing.T) {
 	have, n := Environ()
 	if n != len(os.Environ()) || n != len(have) {
-		t.Error(fail.Msg{
+		t.Error(fail.Diff{
 			Func: "Environ",
 			Msg:  "all entries of `os.Environ()` should be present",
+			Have: have,
+			Want: os.Environ(),
 		})
 	}
 }
