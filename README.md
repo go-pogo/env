@@ -9,8 +9,8 @@ go-env
 
 [latest-release-img]: https://img.shields.io/github/release/roeldev/go-env.svg?label=latest
 [latest-release-url]: https://github.com/roeldev/go-env/releases
-[build-img]: https://img.shields.io/github/workflow/status/roeldev/go-env/tests
-[build-url]: https://travis-ci.org/roeldev/go-env
+[build-img]: https://github.com/roeldev/go-env/workflows/Go/badge.svg
+[build-url]: https://github.com/roeldev/go-env/actions?query=workflow%3AGo
 [go-report-img]: https://goreportcard.com/badge/github.com/roeldev/go-env
 [go-report-url]: https://goreportcard.com/report/github.com/roeldev/go-env
 [go-doc-img]: https://godoc.org/github.com/roeldev/go-env?status.svg
