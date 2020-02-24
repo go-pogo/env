@@ -13,6 +13,7 @@ const (
 	runeQuot    = 39 // '
 	runeDblQuot = 34 // "
 	runeHash    = 35 // #
+	runeDash    = 45 // -
 )
 
 // Map represents a map of key value pairs.
@@ -81,42 +82,49 @@ func ParseSlice(env []string, dest Map) (n int) {
 }
 
 // ParseFlagArgs parses an arguments slice of strings to the provided `Map`.
-// As a result, it returns the number of successfully parsed arguments.
-func ParseFlagArgs(flag string, args []string, dest Map) (n int) {
+// As a result, it returns a new slice with the remaining arguments and the
+// number of successfully parsed arguments.
+func ParseFlagArgs(flag string, args []string, dest Map) ([]string, int) {
 	if flag == "" || len(args) == 0 {
-		return 0
+		return args, 0
 	}
 
-	sd, dd := "-"+flag, "--"+flag
-	sdl, ddl := len(sd), len(dd)
+	flagLen := len(flag)
+	result := make([]string, 0, len(args))
+	count := 0
 
-	nextIsPair := false
-	for _, arg := range args {
-		arg = strings.TrimSpace(arg)
-		if nextIsPair && arg[0] != '-' {
-			if parseAndAdd(dest, arg) {
-				n++
+	lookahead := false
+	for _, item := range args {
+		arg := strings.TrimSpace(item)
+		sd := arg[0] == runeDash // starts with single dash?
+
+		if lookahead {
+			if !sd && parseAndAdd(dest, arg) {
+				count++
+				continue
 			}
-			nextIsPair = false
-			continue
+
+			lookahead = false
 		}
 
-		if strings.Index(arg, sd) == 0 {
-			if len(arg) == sdl {
-				nextIsPair = true
-			} else if parseAndAdd(dest, arg[sdl+1:]) {
-				n++
+		dd := sd && arg[1] == runeDash // starts with double dash?
+		idx := strings.Index(arg, flag)
+
+		if sd && idx == 1 || (dd && idx == 2) {
+			if len(arg) == (flagLen + idx) {
+				lookahead = true
+				continue
 			}
-		} else if strings.Index(arg, dd) == 0 {
-			if len(arg) == ddl {
-				nextIsPair = true
-			} else if parseAndAdd(dest, arg[ddl+1:]) {
-				n++
+			if parseAndAdd(dest, arg[(flagLen+idx+1):]) {
+				count++
+				continue
 			}
 		}
+
+		result = append(result, item)
 	}
 
-	return n
+	return result, count
 }
 
 // ParsePair parses an environment variable's paired key and value and returns the separated values.

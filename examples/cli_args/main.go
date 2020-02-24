@@ -10,7 +10,7 @@ import (
 func main() {
 	args := os.Args[1:]
 	envs := make(env.Map)
-	n := env.ParseFlagArgs("e", args, envs)
+	_, n := env.ParseFlagArgs("e", args, envs)
 
 	fmt.Println("Env vars parsed:", n)
 	for key, val := range envs {
