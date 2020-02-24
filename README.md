@@ -86,9 +86,13 @@ func main() {
 ```
 The args slice may have multiple entries for the same flag provided by CLI arguments, eg:
 ```sh
-yourcliprogram -e key=val -someFlag -e "another=env var"
+yourcliprogram -e key=val -someFlag -e="another=env var"
 ```
-When parsed, above example results in:
+Flags may also contain multiple values, thus above example can also be written like:
+```sh
+yourcliprogram -e key=val another="env var" -someFlag
+```
+When parsed, both example result in:
 ```go
 env.Map{"key": "val", "another": "env var"}
 ```
