@@ -168,64 +168,93 @@ qux="#xoo"
 
 func TestParseFlagArgs(t *testing.T) {
 	tests := map[string]struct {
-		flag string
-		args []string
-		want Map
+		flag    string
+		input   []string
+		wantRes []string
+		wantMap Map
 	}{
 		"empty": {
-			flag: "e",
-			args: []string{},
-			want: Map{},
+			flag:    "e",
+			input:   []string{},
+			wantRes: []string{},
+			wantMap: Map{},
 		},
 		"none": {
-			flag: "e",
-			args: []string{"-a", "-e", "-b=1", "-c", "2", "-e"},
-			want: Map{},
+			flag:    "e",
+			input:   []string{"-a", "-e", "-b=1", "-c", "2", "-e"},
+			wantRes: []string{"-a", "-b=1", "-c", "2"},
+			wantMap: Map{},
 		},
 		"single dash": {
-			flag: "e",
-			args: []string{"-e=foo=bar"},
-			want: Map{"foo": "bar"},
+			flag:    "e",
+			input:   []string{"-e=foo=bar"},
+			wantRes: []string{},
+			wantMap: Map{"foo": "bar"},
 		},
 		"single dash next arg": {
-			flag: "env",
-			args: []string{"-env", "foo=bar"},
-			want: Map{"foo": "bar"},
+			flag:    "env",
+			input:   []string{"-env", "foo=bar"},
+			wantRes: []string{},
+			wantMap: Map{"foo": "bar"},
 		},
 		"single double dash": {
-			flag: "env",
-			args: []string{"--env=qux=xoo"},
-			want: Map{"qux": "xoo"},
+			flag:    "env",
+			input:   []string{"--env=qux=xoo"},
+			wantRes: []string{},
+			wantMap: Map{"qux": "xoo"},
 		},
 		"single double dash next arg": {
-			flag: "e",
-			args: []string{"--e", "qux=xoo"},
-			want: Map{"qux": "xoo"},
+			flag:    "e",
+			input:   []string{"--e", "qux=xoo"},
+			wantRes: []string{},
+			wantMap: Map{"qux": "xoo"},
 		},
 		"mixed": {
-			flag: "e",
-			args: []string{"-e", "foo=bar", "-e=empty", "bar", "--e=qux=xoo", "-e", "bar=baz", "--skip", "-e"},
-			want: Map{"foo": "bar", "qux": "xoo", "bar": "baz"},
+			flag:    "e",
+			input:   []string{"-e", "foo=bar", "-e=empty", "bar", "--e=qux=xoo", "-e", "bar=baz", "--skip", "-e"},
+			wantRes: []string{"-e=empty", "bar", "--skip"},
+			wantMap: Map{"foo": "bar", "qux": "xoo", "bar": "baz"},
+		},
+		"multi mixed": {
+			flag:    "e",
+			input:   []string{"-e", "foo=bar", "empty=", "bar", "--e=qux=xoo", "nop=nop", "-e", "bar=baz", "--skip", "-e"},
+			wantRes: []string{"bar", "nop=nop", "--skip"},
+			wantMap: Map{"foo": "bar", "empty": "", "qux": "xoo", "bar": "baz"},
+		},
+		"lookahead": {
+			flag:    "e",
+			input:   []string{"-e", "-t", "foo=bar", "-e", "qux=xoo", "empty=", "baz"},
+			wantRes: []string{"-t", "foo=bar", "baz"},
+			wantMap: Map{"qux": "xoo", "empty": ""},
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			have := make(Map)
-			n := ParseFlagArgs(tc.flag, tc.args, have)
-			if !cmp.Equal(have, tc.want) {
+			haveMap := make(Map)
+			haveRes, n := ParseFlagArgs(tc.flag, tc.input, haveMap)
+			if !cmp.Equal(haveMap, tc.wantMap) {
 				t.Error(fail.Diff{
 					Func: "ParseFlagArgs",
-					Have: have,
-					Want: tc.want,
+					Msg:  "destination map should include all parsed env. vars",
+					Have: haveMap,
+					Want: tc.wantMap,
 				})
 			}
-			if n != len(tc.want) {
+			if !cmp.Equal(haveRes, tc.wantRes) {
 				t.Error(fail.Diff{
 					Func: "ParseFlagArgs",
-					Msg:  "return value should be the number of parsed items",
+					Msg:  "return value should be without parsed env. vars",
+					Have: strings.Join(haveRes, " "),
+					Want: strings.Join(tc.wantRes, " "),
+				})
+			}
+			if n != len(tc.wantMap) {
+				t.Error(fail.Diff{
+					Func: "ParseFlagArgs",
+					Msg:  "second return value should be the number of parsed items",
 					Have: n,
-					Want: len(tc.want),
+					Want: len(tc.wantMap),
 				})
 			}
 		})
