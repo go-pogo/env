@@ -2,22 +2,20 @@ go-env
 ======
 
 [![Latest release][latest-release-img]][latest-release-url]
-[![Build status][build-img]][build-url]
-[![Go Report Card][go-report-img]][go-report-url]
-[![GoDoc documentation][go-doc-img]][go-doc-url]
-![Minimal Go version][go-version-img]
+[![Build status][build-status-img]][build-status-url]
+[![Go Report Card][report-img]][report-url]
+[![Documentation][doc-img]][doc-url]
 
 [latest-release-img]: https://img.shields.io/github/release/roeldev/go-env.svg?label=latest
 [latest-release-url]: https://github.com/roeldev/go-env/releases
-[build-img]: https://github.com/roeldev/go-env/workflows/Go/badge.svg
-[build-url]: https://github.com/roeldev/go-env/actions?query=workflow%3AGo
-[go-report-img]: https://goreportcard.com/badge/github.com/roeldev/go-env
-[go-report-url]: https://goreportcard.com/report/github.com/roeldev/go-env
-[go-doc-img]: https://godoc.org/github.com/roeldev/go-env?status.svg
-[go-doc-url]: https://pkg.go.dev/github.com/roeldev/go-env
-[go-version-img]: https://img.shields.io/github/go-mod/go-version/roeldev/go-env
+[build-status-img]: https://github.com/roeldev/go-env/workflows/Go/badge.svg
+[build-status-url]: https://github.com/roeldev/go-env/actions?query=workflow%3AGo
+[report-img]: https://goreportcard.com/badge/github.com/roeldev/go-env
+[report-url]: https://goreportcard.com/report/github.com/roeldev/go-env
+[doc-img]: https://godoc.org/github.com/roeldev/go-env?status.svg
+[doc-url]: https://pkg.go.dev/github.com/roeldev/go-env
 
-Go package for parsing environment variables. It can be used to read from any file or `io.Reader`. Or to parse the values of `os.Environ()` and `os.Args`.
+Env is a Go package for parsing environment variables. It can be used to read from any file or `io.Reader` or to parse the values of `os.Environ()` and `os.Args`.
 
 
 ```sh
@@ -98,12 +96,12 @@ env.Map{"key": "val", "another": "env var"}
 ```
 
 
-## Documentation
-Additional detailed documentation is available at [go.dev][go-doc-url]
-
-
 ## Examples
-Some example programs are provided in the [examples](examples) folder. They illustrate some very basic ways to use this package.
+Some example programs are provided in the [examples](examples) folder. They further illustrate some very basic ways to use this package.
+
+
+## Documentation
+Additional detailed documentation is available at [go.dev][doc-url]
 
 
 ### Created with
