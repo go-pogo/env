@@ -1,23 +1,18 @@
+# This is a dofile. For usage info visit https://github.com/roeldev/do
+
+# setup project, get dependencies
+setup: go get -v -t -d ./...
+
+# run tests with coverage and race detection
 test: |
   go test -cover -coverprofile=coverage.out -v -race
   go tool cover -func=coverage.out
 
-tidy: |
-  go mod tidy
-
 # examples
-cli_args: |
-  go build -o example.exe github.com/roeldev/go-env/examples/cli_args
+example1: |
+  go build -o example.exe github.com/roeldev/go-env/examples/1_cli_args
   ./example.exe -e=foo=bar --e "qux=xoo xoo" -e
 
-open_dotenv: |
-  go build -o example.exe github.com/roeldev/go-env/examples/open_dotenv
-  ./example.exe
-
-os_environ: |
-  go build -o example.exe github.com/roeldev/go-env/examples/os_environ
-  ./example.exe
-
-read_ioreader: |
-  go build -o example.exe github.com/roeldev/go-env/examples/read_ioreader
-  ./example.exe
+example2: go run ./examples/2_os_environ
+example3: go run ./examples/3_open_dotenv
+example4: go run ./examples/4_read_ioreader
