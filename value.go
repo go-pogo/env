@@ -29,49 +29,44 @@ func (v Value) GoString() string { return `env.Value("` + string(v) + `")` }
 // String returns Value as a string.
 func (v Value) String() string { return string(v) }
 
-func (v Value) Bool() bool {
-	x, _ := strconv.ParseBool(string(v))
-	return x
-}
-
-// TryBool tries to parse Value as a bool with strconv.ParseBool.
+// Bool tries to parse Value as a bool with strconv.ParseBool.
 // It accepts 1, t, T, TRUE, true, True, 0, f, F, FALSE, false, False.
 // Any other value returns an error.
-func (v Value) TryBool() (bool, error) {
+func (v Value) Bool() (bool, error) {
 	x, err := strconv.ParseBool(string(v))
 	return x, errors.WithKind(err, errKind(err))
 }
 
-// TryInt tries to parse Value as an int with strconv.ParseInt.
-func (v Value) TryInt() (int, error) {
-	x, err := v.tryIntSize(strconv.IntSize)
+// Int tries to parse Value as an int with strconv.ParseInt.
+func (v Value) Int() (int, error) {
+	x, err := v.intSize(strconv.IntSize)
 	return int(x), err
 }
 
-// TryInt8 tries to parse Value as an int8 with strconv.ParseInt.
-func (v Value) TryInt8() (int8, error) {
-	x, err := v.tryIntSize(8)
+// Int8 tries to parse Value as an int8 with strconv.ParseInt.
+func (v Value) Int8() (int8, error) {
+	x, err := v.intSize(8)
 	return int8(x), err
 }
 
-// TryInt16 tries to parse Value as an int16 with strconv.ParseInt.
-func (v Value) TryInt16() (int16, error) {
-	x, err := v.tryIntSize(16)
+// Int16 tries to parse Value as an int16 with strconv.ParseInt.
+func (v Value) Int16() (int16, error) {
+	x, err := v.intSize(16)
 	return int16(x), err
 }
 
-// TryInt32 tries to parse Value as an int32 with strconv.ParseInt.
-func (v Value) TryInt32() (int32, error) {
-	x, err := v.tryIntSize(32)
+// Int32 tries to parse Value as an int32 with strconv.ParseInt.
+func (v Value) Int32() (int32, error) {
+	x, err := v.intSize(32)
 	return int32(x), err
 }
 
-// TryInt64 tries to parse Value as an int64 with strconv.ParseInt.
-func (v Value) TryInt64() (int64, error) {
-	return v.tryIntSize(64)
+// Int64 tries to parse Value as an int64 with strconv.ParseInt.
+func (v Value) Int64() (int64, error) {
+	return v.intSize(64)
 }
 
-func (v Value) tryIntSize(bitSize int) (int64, error) {
+func (v Value) intSize(bitSize int) (int64, error) {
 	x, err := strconv.ParseInt(string(v), 0, bitSize)
 	return x, errors.WithKind(err, errKind(err))
 }
@@ -185,12 +180,12 @@ func (v Value) ReflectAssign(dest reflect.Value) error {
 		return nil
 
 	case reflect.Bool:
-		x, err := v.TryBool()
+		x, err := v.Bool()
 		dest.SetBool(x)
 		return err
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		x, err := v.tryIntSize(typ.Bits())
+		x, err := v.intSize(typ.Bits())
 		dest.SetInt(x)
 		return err
 

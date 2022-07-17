@@ -28,40 +28,40 @@ func TestValue(t *testing.T) {
 			func(s string) (interface{}, error) { return Value(s).String(), nil },
 			func(s string) (interface{}, error) { return s, nil },
 		},
-		"TryBool": {
-			func(s string) (interface{}, error) { return Value(s).TryBool() },
+		"Bool": {
+			func(s string) (interface{}, error) { return Value(s).Bool() },
 			func(s string) (interface{}, error) { return strconv.ParseBool(s) },
 		},
-		"TryInt": {
-			func(s string) (interface{}, error) { return Value(s).TryInt() },
+		"Int": {
+			func(s string) (interface{}, error) { return Value(s).Int() },
 			func(s string) (interface{}, error) {
 				i, err := strconv.ParseInt(s, 0, strconv.IntSize)
 				return int(i), err
 			},
 		},
-		"TryInt8": {
-			func(s string) (interface{}, error) { return Value(s).TryInt8() },
+		"Int8": {
+			func(s string) (interface{}, error) { return Value(s).Int8() },
 			func(s string) (interface{}, error) {
 				i, err := strconv.ParseInt(s, 0, 8)
 				return int8(i), err
 			},
 		},
-		"TryInt16": {
-			func(s string) (interface{}, error) { return Value(s).TryInt16() },
+		"Int16": {
+			func(s string) (interface{}, error) { return Value(s).Int16() },
 			func(s string) (interface{}, error) {
 				i, err := strconv.ParseInt(s, 0, 16)
 				return int16(i), err
 			},
 		},
-		"TryInt32": {
-			func(s string) (interface{}, error) { return Value(s).TryInt32() },
+		"Int32": {
+			func(s string) (interface{}, error) { return Value(s).Int32() },
 			func(s string) (interface{}, error) {
 				i, err := strconv.ParseInt(s, 0, 32)
 				return int32(i), err
 			},
 		},
-		"TryInt64": {
-			func(s string) (interface{}, error) { return Value(s).TryInt64() },
+		"Int64": {
+			func(s string) (interface{}, error) { return Value(s).Int64() },
 			func(s string) (interface{}, error) { return strconv.ParseInt(s, 0, 64) },
 		},
 		"Uint": {
