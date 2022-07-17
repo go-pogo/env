@@ -7,6 +7,8 @@ package env
 import (
 	"io/fs"
 	"os"
+
+	"github.com/go-pogo/errors"
 )
 
 type Loader struct {
@@ -52,15 +54,12 @@ func (l *Loader) File(file string) error {
 		return err
 	}
 
-	defer fr.Close()
+	defer errors.AppendFunc(&err, fr.Close)
 	return scanAll(NewScanner(fr), l.found, true)
 }
 
 func (l *Loader) TryFile(file string) bool {
-	if l.File(file) != nil {
-		return false
-	}
-	return true
+	return l.File(file) == nil
 }
 
 // Fallback Lookupper which is called when a key cannot be found in any of the
