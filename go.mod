@@ -1,9 +1,8 @@
-module github.com/roeldev/go-env
+module github.com/go-pogo/env
 
-go 1.13
+go 1.16
 
 require (
-	github.com/google/go-cmp v0.4.0
-	github.com/roeldev/go-errs v0.1.0
-	github.com/roeldev/go-fail v0.1.1
+	github.com/go-pogo/errors v0.7.2
+	github.com/stretchr/testify v1.7.1
 )
