@@ -52,7 +52,7 @@ func (m Map) Merge(src map[string]string) {
 	}
 }
 
-// MergeValues merges a map of Value into this Map. Existing keys in Map are
+// MergeValues merges a map of Value into this Map. Existing keys in Map m are
 // overwritten with the value of the key in src.
 func (m Map) MergeValues(src map[string]Value) {
 	for k, v := range src {
@@ -61,9 +61,9 @@ func (m Map) MergeValues(src map[string]Value) {
 }
 
 // Lookup retrieves the Value of the environment variable named by the key.
-// If the variable is present in Map the value (which may be empty) is returned
+// If the key is present in Map, the value (which may be empty) is returned
 // and the boolean is true. Otherwise, the returned value will be empty and the
-// boolean will be false.
+// boolean is false.
 func (m Map) Lookup(key string) (Value, bool) {
 	v, ok := m[key]
 	return v, ok
