@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-pogo/errors"
+	"github.com/go-pogo/parseval"
 )
 
 // Unmarshaler is the interface implemented by types that can unmarshal a
@@ -24,13 +25,19 @@ func Unmarshal(data []byte, v interface{}) error {
 	return NewDecoder(bytes.NewBuffer(data), UnmarshalOpts).Decode(v)
 }
 
+// Decode reads from io.Reader and decodes its relevant content to v.
+// It matches the configure.DecoderFunc signature.
+func Decode(r io.Reader, v interface{}) error {
+	return NewDefaultDecoder(r).Decode(v)
+}
+
 const (
 	TagsOnly    Option = 1 << iota // ignore fields that do not have an `env` tag
 	StripExport                    // strip "export " from start of line
 	ReplaceVars                    // replace ${} vars
 
 	UnmarshalOpts  = StripExport | ReplaceVars
-	DefaultOptions = TagsOnly | StripExport | ReplaceVars
+	DefaultOptions = TagsOnly | UnmarshalOpts
 
 	ErrStructPointerExpected errors.Msg = "expected a pointer to a struct"
 
@@ -46,19 +53,24 @@ func (o Option) has(f Option) bool { return o&f != 0 }
 type Decoder struct {
 	scanner  Scanner
 	fallback Lookupper
+	parser   *parseval.Parser
 	err      error
 	found    Map
-	options  Option
+	opts     Option
 }
 
 // NewDecoder returns a new Decoder that scans io.Reader r for environment
 // variables and parses them.
 func NewDecoder(r io.Reader, opts Option) *Decoder {
-	return &Decoder{
-		scanner: NewScanner(r),
-		found:   make(Map, 4),
-		options: opts,
-	}
+	return (&Decoder{
+		parser: parseval.NewParser(
+			reflect.TypeOf((*Unmarshaler)(nil)).Elem(),
+			func(v parseval.Value, u interface{}) error {
+				return u.(Unmarshaler).UnmarshalEnv([]byte(v))
+			},
+		),
+		opts: opts,
+	}).Reset(r)
 }
 
 // NewDefaultDecoder uses NewDecoder to create a *Decoder with DefaultOptions
@@ -83,14 +95,14 @@ func (d *Decoder) Fallback(fallback Lookupper) {
 	d.fallback = fallback
 }
 
-// Set an Option flag.
-func (d *Decoder) Set(opt Option) *Decoder {
-	d.options = d.options | opt
+func (d *Decoder) Reset(r io.Reader) *Decoder {
+	d.scanner = NewScanner(r)
+	d.found = make(Map, 4)
 	return d
 }
 
 // Options return the set Option flags.
-func (d *Decoder) Options() Option { return d.options }
+func (d *Decoder) Options() Option { return d.opts }
 
 // Err returns an error that might occur during scanning when directly using
 // Lookup.
@@ -132,7 +144,7 @@ func (d *Decoder) lookup(lookup string, fallback bool) (Value, bool, error) {
 
 	// defer errors.CatchPanic(err)
 	for d.scanner.Scan() {
-		key, val, err := parseAndStore(d.found, d.scanner.Text(), d.options.has(StripExport))
+		key, val, err := parseAndStore(d.found, d.scanner.Text(), d.opts.has(StripExport))
 		if err != nil {
 			return "", false, errors.WithStack(&LookupError{
 				Err: err,
@@ -156,7 +168,7 @@ func (d *Decoder) lookup(lookup string, fallback bool) (Value, bool, error) {
 }
 
 func (d *Decoder) scanAll() error {
-	return scanAll(d.scanner, d.found, d.options.has(StripExport))
+	return scanAll(d.scanner, d.found, d.opts.has(StripExport))
 }
 
 // Map returns a Map of all found environment variables.
@@ -194,7 +206,7 @@ func (d *Decoder) Decode(v interface{}) error {
 
 func (d *Decoder) DecodeField(field reflect.StructField, val reflect.Value, lookup string) error {
 	tag, found := field.Tag.Lookup(Tag)
-	if tag == ignore || (!found && d.options.has(TagsOnly)) {
+	if tag == ignore || (!found && d.opts.has(TagsOnly)) {
 		return nil
 	}
 	if tag != "" {
@@ -211,7 +223,7 @@ func (d *Decoder) DecodeField(field reflect.StructField, val reflect.Value, look
 		return nil
 	}
 
-	return v.ReflectAssign(val)
+	return d.parser.Parse(v, val)
 }
 
 func (d *Decoder) traverseStruct(pt reflect.Type, pv reflect.Value, p string) error {

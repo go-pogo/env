@@ -9,6 +9,7 @@ import (
 	"unicode"
 
 	"github.com/go-pogo/errors"
+	"github.com/go-pogo/parseval"
 )
 
 // Errors returned by Parse.
@@ -22,6 +23,8 @@ const (
 	quoteSingle = '\''
 	quoteDouble = '"'
 )
+
+type Value = parseval.Value
 
 // Parse parses a string containing a possible key value pair. Any whitespace
 // at the start and/or end of str is trimmed.

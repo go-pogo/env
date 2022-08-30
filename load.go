@@ -19,21 +19,21 @@ type Loader struct {
 	Workdir string
 }
 
-func Open(fsys fs.FS, path string) *Loader {
+func Open(fsys fs.FS, dir string) *Loader {
 	if fsys == nil {
-		fsys = os.DirFS(path)
-		path = ""
+		fsys = os.DirFS(dir)
+		dir = ""
 	}
 
 	l := NewLoader(fsys)
-	l.Workdir = path
+	l.Workdir = dir
 	l.TryFile(".env")
 	l.TryFile(".env.local")
 	return l
 }
 
-func OpenEnv(fsys fs.FS, path, environment string) *Loader {
-	l := Open(fsys, path)
+func OpenEnv(fsys fs.FS, dir, environment string) *Loader {
+	l := Open(fsys, dir)
 	if environment != "" {
 		l.TryFile(".env." + environment)
 		l.TryFile(".env." + environment + ".local")
@@ -85,7 +85,7 @@ func (l *Loader) Decoder(opts Option) *Decoder {
 	return &Decoder{
 		scanner: new(nilScanner),
 		found:   l.found,
-		options: opts,
+		opts:    opts,
 	}
 }
 
@@ -98,32 +98,3 @@ func (l *Loader) DefaultDecoder() *Decoder {
 	}
 	return dec
 }
-
-// type file struct {
-// 	fsys     fs.FS
-// 	path     string
-// 	required bool
-// }
-//
-// func (f *file) Configure(v interface{}) error {
-// 	fr, err := f.fsys.Open(f.path)
-// 	if err != nil {
-// 		if f.required || !errors.Is(err, fs.ErrNotExist) {
-// 			return errors.WithStack(err)
-// 		}
-// 		// the DecoderFunc must figure out what to do with a nil io.Reader
-// 		return Decode(nil, v)
-// 	}
-// 	err = Decode(fr, v)
-// 	errors.Append(&err, fr.Close())
-// 	return err
-// }
-//
-// func absPath(path string) string {
-// 	if !filepath.IsAbs(path) {
-// 		if cwd, err := os.Getwd(); err == nil {
-// 			path = filepath.Join(cwd, path)
-// 		}
-// 	}
-// 	return path
-// }
