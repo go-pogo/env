@@ -82,11 +82,10 @@ func (l *Loader) Lookup(key string) (Value, bool) {
 }
 
 func (l *Loader) Decoder(opts Option) *Decoder {
-	return &Decoder{
-		scanner: new(nilScanner),
-		found:   l.found,
-		opts:    opts,
-	}
+	dec := newDecoder(opts)
+	dec.scanner = new(nilScanner)
+	dec.found = l.found
+	return dec
 }
 
 func (l *Loader) DefaultDecoder() *Decoder {

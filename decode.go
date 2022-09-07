@@ -62,7 +62,17 @@ type Decoder struct {
 // NewDecoder returns a new Decoder that scans io.Reader r for environment
 // variables and parses them.
 func NewDecoder(r io.Reader, opts Option) *Decoder {
-	return (&Decoder{
+	return newDecoder(opts).Reset(r)
+}
+
+// NewDefaultDecoder uses NewDecoder to create a *Decoder with DefaultOptions
+// and LookupEnv as Fallback.
+func NewDefaultDecoder(r io.Reader) *Decoder {
+	return setDefaultFallback(NewDecoder(r, DefaultOptions))
+}
+
+func newDecoder(opts Option) *Decoder {
+	return &Decoder{
 		parser: parseval.NewParser(
 			reflect.TypeOf((*Unmarshaler)(nil)).Elem(),
 			func(v parseval.Value, u interface{}) error {
@@ -70,13 +80,7 @@ func NewDecoder(r io.Reader, opts Option) *Decoder {
 			},
 		),
 		opts: opts,
-	}).Reset(r)
-}
-
-// NewDefaultDecoder uses NewDecoder to create a *Decoder with DefaultOptions
-// and LookupEnv as Fallback.
-func NewDefaultDecoder(r io.Reader) *Decoder {
-	return setDefaultFallback(NewDecoder(r, DefaultOptions))
+	}
 }
 
 func setDefaultFallback(dec *Decoder) *Decoder {
