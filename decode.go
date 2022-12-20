@@ -26,7 +26,6 @@ func Unmarshal(data []byte, v interface{}) error {
 }
 
 // Decode reads from io.Reader and decodes its relevant content to v.
-// It matches the configure.DecoderFunc signature.
 func Decode(r io.Reader, v interface{}) error {
 	return NewDefaultDecoder(r).Decode(v)
 }
@@ -66,20 +65,20 @@ func NewDecoder(r io.Reader, opts Option) *Decoder {
 }
 
 // NewDefaultDecoder uses NewDecoder to create a *Decoder with DefaultOptions
-// and LookupEnv as Fallback.
+// and LookupEnv as fallback.
 func NewDefaultDecoder(r io.Reader) *Decoder {
 	return setDefaultFallback(NewDecoder(r, DefaultOptions))
 }
 
 func newDecoder(opts Option) *Decoder {
+	p := parseval.NewParser()
+	p.Register(reflect.TypeOf((*Unmarshaler)(nil)).Elem(), func(val parseval.Value, dest interface{}) error {
+		return dest.(Unmarshaler).UnmarshalEnv(val.Bytes())
+	})
+
 	return &Decoder{
-		parser: parseval.NewParser(
-			reflect.TypeOf((*Unmarshaler)(nil)).Elem(),
-			func(v parseval.Value, u interface{}) error {
-				return u.(Unmarshaler).UnmarshalEnv([]byte(v))
-			},
-		),
-		opts: opts,
+		parser: p,
+		opts:   opts,
 	}
 }
 
