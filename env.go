@@ -9,24 +9,21 @@ other data sources.
 package env
 
 import (
+	"github.com/go-pogo/errors"
 	"os"
 	"strings"
 )
 
-type Fallbacker interface {
-	Fallback(f Lookupper)
+// Getenv retrieves the Value of the environment variable named by the key.
+// It behaves similar to os.Getenv.
+func Getenv(key string) Value { return Value(os.Getenv(key)) }
+
+// LookupEnv retrieves the Value of the environment variable named by the key.
+// It behaves similar to os.LookupEnv.
+func LookupEnv(key string) (Value, bool) {
+	v, ok := os.LookupEnv(key)
+	return Value(v), ok
 }
-
-type Lookupper interface {
-	Lookup(key string) (Value, bool)
-}
-
-type LookupperFunc func(key string) (Value, bool)
-
-func (f LookupperFunc) Lookup(key string) (Value, bool) { return f(key) }
-
-// Map represents a map of key value pairs.
-type Map map[string]Value
 
 // Environ returns a Map with the environment variables of os.Environ.
 func Environ() Map {
@@ -43,6 +40,20 @@ func Environ() Map {
 	}
 	return res
 }
+
+func EnvironLookup() Lookupper {
+	return LookupperFunc(func(key string) (Value, error) {
+		if v, ok := LookupEnv(key); ok {
+			return v, nil
+		}
+		return "", errors.New(ErrNotFound)
+	})
+}
+
+var _ Lookupper = new(Map)
+
+// Map represents a map of key value pairs.
+type Map map[string]Value
 
 // Merge any map of strings into this Map. Existing keys in Map are overwritten
 // with the value of the key in src.
@@ -64,32 +75,15 @@ func (m Map) MergeValues(src map[string]Value) {
 // If the key is present in Map, the value (which may be empty) is returned
 // and the boolean is true. Otherwise, the returned value will be empty and the
 // boolean is false.
-func (m Map) Lookup(key string) (Value, bool) {
-	v, ok := m[key]
-	return v, ok
-}
-
-// Lookup retrieves the Value of the environment variable named by the key
-// from any of the provided arguments.
-// If the key is present the value (which may be empty) is returned and the
-// boolean is true. Otherwise, the returned value will be empty and the boolean
-// will be false.
-func Lookup(key string, from ...Lookupper) (Value, bool) {
-	for _, l := range from {
-		if v, ok := l.Lookup(key); ok {
-			return v, true
-		}
+func (m Map) Lookup(key string) (Value, error) {
+	if v, ok := m[key]; ok {
+		return v, nil
 	}
-	return "", false
+	return "", errors.New(ErrNotFound)
 }
 
-// LookupEnv retrieves the Value of the environment variable named by the key.
-// It behaves similar to os.LookupEnv.
-func LookupEnv(key string) (Value, bool) {
-	v, ok := os.LookupEnv(key)
-	return Value(v), ok
+func (m Map) Clone() Map {
+	clone := make(Map, len(m))
+	clone.MergeValues(m)
+	return clone
 }
-
-// Getenv retrieves the Value of the environment variable named by the key.
-// It behaves similar to os.Getenv.
-func Getenv(key string) Value { return Value(os.Getenv(key)) }

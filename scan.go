@@ -9,6 +9,8 @@ import (
 	"bytes"
 	"io"
 	"unicode"
+
+	"github.com/go-pogo/errors"
 )
 
 type Scanner interface {
@@ -18,7 +20,16 @@ type Scanner interface {
 	Scan() bool
 }
 
-// NewScanner returns a new scanner which wraps a bufio.Scanner that reads from
+var _ Scanner = new(scanner)
+
+// scanner embeds a bufio.Scanner. Successive calls to the Scan method will,
+// just like bufio.Scanner, step through the 'tokens' of the read bytes,
+// skipping the bytes between the tokens.
+type scanner struct {
+	*bufio.Scanner
+}
+
+// NewScanner returns a new Scanner which wraps a bufio.Scanner that reads from
 // io.Reader r. The split function defaults to ScanLines.
 func NewScanner(r io.Reader) Scanner {
 	if r == nil {
@@ -55,12 +66,7 @@ func ScanLines(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	return advance, token, nil
 }
 
-// scanner embeds a bufio.Scanner. Successive calls to the Scan method will,
-// just like bufio.Scanner, step through the 'tokens' of the read bytes,
-// skipping the bytes between the tokens.
-type scanner struct {
-	*bufio.Scanner
-}
+func (s *scanner) Err() error { return errors.WithStack(s.Scanner.Err()) }
 
 // Scan advances the scanner to the next token, which will then be available
 // through the Bytes or Text method. The token is guaranteed to not be empty.
@@ -72,16 +78,6 @@ func (s *scanner) Scan() bool {
 		ok = s.Scanner.Scan()
 	}
 	return ok
-}
-
-func scanAll(scanner Scanner, dest Map, stripExport bool) error {
-	for scanner.Scan() {
-		_, _, err := parseAndStore(dest, scanner.Text(), stripExport)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 type nilScanner struct{}

@@ -6,13 +6,27 @@ package env
 
 import (
 	"bytes"
-	"io"
 	"reflect"
 	"strings"
 
+	"github.com/go-pogo/env/envtag"
 	"github.com/go-pogo/errors"
 	"github.com/go-pogo/parseval"
 )
+
+const ErrStructPointerExpected errors.Msg = "expected a pointer to a struct"
+
+var parser *parseval.Parser
+
+func init() {
+	parser = parseval.NewParser()
+	parser.Register(
+		reflect.TypeOf((*Unmarshaler)(nil)).Elem(),
+		func(val parseval.Value, dest interface{}) error {
+			return dest.(Unmarshaler).UnmarshalEnv(val.Bytes())
+		},
+	)
+}
 
 // Unmarshaler is the interface implemented by types that can unmarshal a
 // textual representation of themselves.
@@ -22,244 +36,151 @@ type Unmarshaler interface {
 }
 
 func Unmarshal(data []byte, v interface{}) error {
-	return NewDecoder(bytes.NewBuffer(data), UnmarshalOpts).Decode(v)
+	return NewDecoder(NewReader(bytes.NewBuffer(data))).Decode(v)
 }
-
-// Decode reads from io.Reader and decodes its relevant content to v.
-func Decode(r io.Reader, v interface{}) error {
-	return NewDefaultDecoder(r).Decode(v)
-}
-
-const (
-	TagsOnly    Option = 1 << iota // ignore fields that do not have an `env` tag
-	StripExport                    // strip "export " from start of line
-	ReplaceVars                    // replace ${} vars
-
-	UnmarshalOpts  = StripExport | ReplaceVars
-	DefaultOptions = TagsOnly | UnmarshalOpts
-
-	ErrStructPointerExpected errors.Msg = "expected a pointer to a struct"
-
-	Tag      = "env"
-	ignore   = "-"
-	noPrefix = "noprefix"
-)
-
-type Option uint8
-
-func (o Option) has(f Option) bool { return o&f != 0 }
 
 type Decoder struct {
-	scanner  Scanner
-	fallback Lookupper
-	parser   *parseval.Parser
-	err      error
-	found    Map
-	opts     Option
+	src Lookupper
+	err error
+
+	// TagsOnly ignores fields that do not have an `env` tag when set to true.
+	TagsOnly bool
+
+	// ReplaceVars
+	ReplaceVars bool
 }
 
 // NewDecoder returns a new Decoder that scans io.Reader r for environment
 // variables and parses them.
-func NewDecoder(r io.Reader, opts Option) *Decoder {
-	return newDecoder(opts).Reset(r)
-}
-
-// NewDefaultDecoder uses NewDecoder to create a *Decoder with DefaultOptions
-// and LookupEnv as fallback.
-func NewDefaultDecoder(r io.Reader) *Decoder {
-	return setDefaultFallback(NewDecoder(r, DefaultOptions))
-}
-
-func newDecoder(opts Option) *Decoder {
-	p := parseval.NewParser()
-	p.Register(reflect.TypeOf((*Unmarshaler)(nil)).Elem(), func(val parseval.Value, dest interface{}) error {
-		return dest.(Unmarshaler).UnmarshalEnv(val.Bytes())
-	})
-
+func NewDecoder(l Lookupper) *Decoder {
 	return &Decoder{
-		parser: p,
-		opts:   opts,
+		src: l,
+
+		ReplaceVars: true,
 	}
-}
-
-func setDefaultFallback(dec *Decoder) *Decoder {
-	dec.fallback = LookupperFunc(LookupEnv)
-	return dec
-}
-
-const panicSelfAsFallback = "cannot set Decoder as a fallback of itself"
-
-// Fallback Lookupper which is called when a key cannot be found within the
-// internal io.Reader that's used to construct the Decoder.
-func (d *Decoder) Fallback(fallback Lookupper) {
-	if d == fallback {
-		panic(panicSelfAsFallback)
-	}
-	d.fallback = fallback
-}
-
-func (d *Decoder) Reset(r io.Reader) *Decoder {
-	d.scanner = NewScanner(r)
-	d.found = make(Map, 4)
-	return d
-}
-
-// Options return the set Option flags.
-func (d *Decoder) Options() Option { return d.opts }
-
-// Err returns an error that might occur during scanning when directly using
-// Lookup.
-func (d *Decoder) Err() error {
-	if d.err == nil {
-		return nil
-	}
-
-	err := d.err
-	d.err = nil
-	return err
-}
-
-// Lookup retrieves the Value of the environment variable named by key.
-// If the variable is present the value (which may be empty) is returned and
-// the boolean is true. Otherwise, the returned value will be empty and the
-// boolean will be false.
-func (d *Decoder) Lookup(key string) (Value, bool) {
-	v, ok, err := d.lookup(key, true)
-	if err != nil {
-		errors.Append(&d.err, err)
-	}
-	return v, ok
-}
-
-type LookupError struct {
-	Err error
-	Key string
-}
-
-func (e *LookupError) Unwrap() error { return e.Err }
-
-func (e *LookupError) Error() string { return "error while looking up `" + e.Key + "`" }
-
-func (d *Decoder) lookup(lookup string, fallback bool) (Value, bool, error) {
-	if val, ok := d.found[lookup]; ok {
-		return val, true, nil
-	}
-
-	// defer errors.CatchPanic(err)
-	for d.scanner.Scan() {
-		key, val, err := parseAndStore(d.found, d.scanner.Text(), d.opts.has(StripExport))
-		if err != nil {
-			return "", false, errors.WithStack(&LookupError{
-				Err: err,
-				Key: lookup,
-			})
-		}
-
-		// found the key we were looking for
-		// no need to continue scanning, for now...
-		if key == lookup {
-			return val, true, nil
-		}
-	}
-	if fallback && d.fallback != nil {
-		if val, ok := d.fallback.Lookup(lookup); ok {
-			d.found[lookup] = val
-			return val, true, nil
-		}
-	}
-	return "", false, nil
-}
-
-func (d *Decoder) scanAll() error {
-	return scanAll(d.scanner, d.found, d.opts.has(StripExport))
-}
-
-// Map returns a Map of all found environment variables.
-func (d *Decoder) Map() (Map, error) {
-	if err := d.scanAll(); err != nil {
-		return nil, err
-	}
-
-	clone := make(Map, len(d.found))
-	clone.MergeValues(d.found)
-	return clone, nil
 }
 
 func (d *Decoder) Decode(v interface{}) error {
-	if m, ok := v.(Map); ok {
-		if err := d.scanAll(); err != nil {
-			return err
-		}
-
-		m.MergeValues(d.found)
-		return nil
-	}
-
 	if v == nil || reflect.TypeOf(v).Kind() != reflect.Ptr {
 		return ErrStructPointerExpected
 	}
 
-	val := reflect.ValueOf(v).Elem()
-	if val.Kind() != reflect.Struct {
+	val := reflect.ValueOf(v)
+	if underlyingKind(val) != reflect.Struct {
 		return ErrStructPointerExpected
 	}
 
-	return d.traverseStruct(val.Type(), val, "")
+	return d.decodeStruct(val, nil)
 }
 
-func (d *Decoder) DecodeField(field reflect.StructField, val reflect.Value, lookup string) error {
-	tag, found := field.Tag.Lookup(Tag)
-	if tag == ignore || (!found && d.opts.has(TagsOnly)) {
-		return nil
-	}
-	if tag != "" {
-		lookup = tag
-	}
-	if lookup == "" {
-		lookup = field.Name
-	}
+const panicPtr = "parseval.Indirect should always resolve ptr values; this is a bug!"
 
-	v, ok, err := d.lookup(lookup, true)
-	if err != nil {
-		return err
-	} else if !ok {
-		return nil
-	}
-
-	return d.parser.Parse(v, val)
-}
-
-func (d *Decoder) traverseStruct(pt reflect.Type, pv reflect.Value, p string) error {
-	if len(p) > 0 {
-		p += "_"
-	}
+func (d *Decoder) decodeStruct(pv reflect.Value, p path) error {
+	pv = indirect(pv)
+	pt := pv.Type()
 
 	for i := 0; i < pv.NumField(); i++ {
-		field, val := pt.Field(i), pv.Field(i)
-		path := p + strings.ToUpper(field.Name)
+		field, rv := pt.Field(i), pv.Field(i)
 
-		switch field.Type.Kind() {
-		case reflect.Ptr:
-			elem := field.Type.Elem()
-			if !val.CanSet() || elem.Kind() != reflect.Struct {
-				continue
-			}
+		switch underlyingKind(rv) {
+		case reflect.Invalid, reflect.Uintptr, reflect.Chan, reflect.Func, reflect.UnsafePointer:
+			continue
 
-			val.Set(reflect.New(elem))
-			if err := d.traverseStruct(field.Type, val.Elem(), path); err != nil {
-				return err
-			}
+		case reflect.Pointer:
+			panic(panicPtr)
 
 		case reflect.Struct:
-			if err := d.traverseStruct(field.Type, val, path); err != nil {
-				return err
+			if !parser.HasFunc(rv.Type()) {
+				// continue traversing the struct...
+				if err := d.decodeStruct(rv, p.extend(field.Name)); err != nil {
+					return err
+				} else {
+					continue
+				}
 			}
 
+			// parser supports the struct as a type, let it handle it further
+			fallthrough
+
 		default:
-			if err := d.DecodeField(field, val, path); err != nil {
+			if err := d.decodeField(field, rv, p.extend(field.Name)); err != nil {
 				return err
 			}
 		}
 	}
 	return nil
+}
+
+func (d *Decoder) decodeField(field reflect.StructField, rv reflect.Value, path path) error {
+	t, found := field.Tag.Lookup(envtag.Key)
+	if !found && d.TagsOnly {
+		return nil
+	}
+
+	tag := envtag.ParseTag(t)
+	if tag.Ignore {
+		return nil
+	}
+
+	if tag.Name == "" {
+		if tag.NoPrefix {
+			tag.Name = path.last()
+		} else {
+			tag.Name = path.join()
+		}
+	}
+
+	val, err := d.src.Lookup(tag.Name)
+	if IsNotFound(err) {
+		if def := field.Tag.Get("default"); def == "" {
+			return nil
+		} else {
+			val = Value(def)
+		}
+	} else if err != nil {
+		return err
+	}
+
+	return parser.Parse(val, rv)
+}
+
+func underlyingKind(rv reflect.Value) reflect.Kind {
+	k := rv.Kind()
+	for k == reflect.Ptr {
+		rv = rv.Elem()
+		k = rv.Kind()
+	}
+	return k
+}
+
+func indirect(v reflect.Value) reflect.Value {
+	for v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			// create a pointer to the type v points to
+			ptr := reflect.New(v.Type().Elem())
+			v.Set(ptr)
+		}
+
+		v = v.Elem()
+	}
+	return v
+}
+
+type path []string
+
+func (p path) last() string { return p[len(p)-1] }
+
+func (p path) join() string { return strings.Join(p, "_") }
+
+func (p path) extend(s string) path {
+	var x path
+	if n := len(p); n == 0 {
+		x = make(path, 0, 2)
+	} else {
+		x = make(path, len(p))
+		copy(x, p)
+	}
+
+	x = append(x, strings.ToUpper(s))
+	return x
 }

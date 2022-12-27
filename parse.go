@@ -5,6 +5,7 @@
 package env
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
 
@@ -12,12 +13,10 @@ import (
 	"github.com/go-pogo/parseval"
 )
 
-// Errors returned by Parse.
 const (
-	ParseError         errors.Kind = "parse error"
-	ErrInvalidFormat   errors.Msg  = "invalid format"
-	ErrMissingEndQuote errors.Msg  = "missing end quote"
-	ErrEmptyKey        errors.Msg  = "empty key"
+	ErrInvalidFormat   errors.Msg = "invalid format"
+	ErrMissingEndQuote errors.Msg = "missing end quote"
+	ErrEmptyKey        errors.Msg = "empty key"
 
 	commentHash = '#'
 	quoteSingle = '\''
@@ -35,33 +34,48 @@ func Parse(str string) (string, Value, error) {
 	if str == "" || str[0] == commentHash {
 		return "", "", nil
 	}
-	return parse(str, true)
+	return parse(str)
 }
 
-func parseAndStore(dest map[string]Value, str string, stripExport bool) (string, Value, error) {
-	k, v, err := parse(str, stripExport)
-	if err == nil {
-		dest[k] = v
-	}
-	return k, v, err
+type ParseError struct {
+	Err error
+	Str string
 }
 
-func parse(str string, stripExport bool) (string, Value, error) {
+func (e *ParseError) Unwrap() error { return e.Err }
+
+func (e *ParseError) Error() string {
+	return fmt.Sprintf("error while parsing `%s`", e.Str)
+}
+
+//func parseAndStore(str string, dest map[string]Value) (string, Value, error) {
+//	k, v, err := parse(str)
+//	if err == nil {
+//		dest[k] = v
+//	}
+//	return k, v, err
+//}
+
+func parse(str string) (string, Value, error) {
 	parts := strings.SplitAfterN(str, "=", 2)
 	if len(parts) != 2 {
-		return "", "", errors.WithKind(ErrInvalidFormat, ParseError)
+		return "", "", errors.WithStack(&ParseError{
+			Err: ErrInvalidFormat,
+			Str: str,
+		})
 	}
 
 	n := len(parts[0]) - 1
 	if n == 0 {
-		return "", "", errors.WithKind(ErrEmptyKey, ParseError)
+		return "", "", errors.WithStack(&ParseError{
+			Err: ErrEmptyKey,
+			Str: str,
+		})
 	}
 
 	// strip `=` from end of key part
 	key := parts[0][:n]
-
-	if stripExport &&
-		n > 6 &&
+	if n > 6 &&
 		strings.HasPrefix(key, "export") &&
 		unicode.IsSpace(rune(key[6])) {
 		// strip `export ` from start and optional whitespace from end
@@ -71,7 +85,10 @@ func parse(str string, stripExport bool) (string, Value, error) {
 		key = strings.TrimSpace(key[:n-1])
 	}
 	if key == "" {
-		return "", "", errors.WithKind(ErrEmptyKey, ParseError)
+		return "", "", errors.WithStack(&ParseError{
+			Err: ErrEmptyKey,
+			Str: str,
+		})
 	}
 
 	val := parts[1]
@@ -88,13 +105,19 @@ func parse(str string, stripExport bool) (string, Value, error) {
 	case val[0] == quoteSingle:
 		val, err = parseQuotedValue(val[1:], quoteSingle)
 		if err != nil {
-			return "", "", errors.WithKind(err, ParseError)
+			return "", "", errors.WithStack(&ParseError{
+				Err: err,
+				Str: str,
+			})
 		}
 
 	case val[0] == quoteDouble:
 		val, err = parseQuotedValue(val[1:], quoteDouble)
 		if err != nil {
-			return "", "", errors.WithKind(err, ParseError)
+			return "", "", errors.WithStack(&ParseError{
+				Err: err,
+				Str: str,
+			})
 		}
 
 	default:
@@ -127,7 +150,7 @@ loop:
 		switch char {
 		case q:
 			if !e {
-				// quote is not escaped, we've reached to end of the value
+				// quote is not escaped, we've reached the end of the value
 				break loop
 			}
 
