@@ -90,7 +90,7 @@ func (d *Decoder) decodeStruct(pv reflect.Value, p path) error {
 			panic(panicPtr)
 
 		case reflect.Struct:
-			if !parser.HasFunc(rv.Type()) {
+			if _, ok := parser.Func(rv.Type()); !ok {
 				// continue traversing the struct...
 				if err := d.decodeStruct(rv, p.extend(field.Name)); err != nil {
 					return err
