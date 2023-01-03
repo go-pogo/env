@@ -48,7 +48,21 @@ func NewFileReader(f fs.File) *FileReader {
 func Open(name string) (*FileReader, error) {
 	f, err := os.Open(name)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		if !os.IsNotExist(err) {
+			err = errors.WithStack(err)
+		}
+		return nil, err
+	}
+	return NewFileReader(f), nil
+}
+
+func OpenFS(fsys fs.FS, name string) (*FileReader, error) {
+	f, err := fsys.Open(name)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			err = errors.WithStack(err)
+		}
+		return nil, err
 	}
 	return NewFileReader(f), nil
 }
