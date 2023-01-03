@@ -14,7 +14,13 @@ import (
 	"github.com/go-pogo/parseval"
 )
 
-const ErrStructPointerExpected errors.Msg = "expected a pointer to a struct"
+const (
+	ErrStructPointerExpected errors.Msg = "expected a non-nil pointer to a struct"
+	ErrUnableToSet                      = parseval.ErrUnableToSet
+	ErrUnableToAddr                     = parseval.ErrUnableToAddr
+
+	InvalidActionError = parseval.InvalidActionError
+)
 
 var parser *parseval.Parser
 
@@ -52,25 +58,25 @@ type Decoder struct {
 
 // NewDecoder returns a new Decoder that scans io.Reader r for environment
 // variables and parses them.
-func NewDecoder(l Lookupper) *Decoder {
+func NewDecoder(src ...Lookupper) *Decoder {
 	return &Decoder{
-		src: l,
+		src: Chain(src...),
 
 		ReplaceVars: true,
 	}
 }
 
 func (d *Decoder) Decode(v interface{}) error {
-	if v == nil || reflect.TypeOf(v).Kind() != reflect.Ptr {
-		return ErrStructPointerExpected
+	rv := reflect.ValueOf(v)
+	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+		return errors.WithKind(ErrStructPointerExpected, InvalidActionError)
 	}
 
-	val := reflect.ValueOf(v)
-	if underlyingKind(val) != reflect.Struct {
-		return ErrStructPointerExpected
+	if underlyingKind(rv) != reflect.Struct {
+		return errors.WithKind(ErrStructPointerExpected, InvalidActionError)
 	}
 
-	return d.decodeStruct(val, nil)
+	return d.decodeStruct(rv, nil)
 }
 
 const panicPtr = "parseval.Indirect should always resolve ptr values; this is a bug!"
@@ -147,7 +153,12 @@ func (d *Decoder) decodeField(field reflect.StructField, rv reflect.Value, path 
 func underlyingKind(rv reflect.Value) reflect.Kind {
 	k := rv.Kind()
 	for k == reflect.Ptr {
-		rv = rv.Elem()
+		if rv.IsNil() {
+			rv = reflect.New(rv.Type().Elem()).Elem()
+			rv = indirect(rv)
+		} else {
+			rv = rv.Elem()
+		}
 		k = rv.Kind()
 	}
 	return k
@@ -157,8 +168,7 @@ func indirect(v reflect.Value) reflect.Value {
 	for v.Kind() == reflect.Ptr {
 		if v.IsNil() {
 			// create a pointer to the type v points to
-			ptr := reflect.New(v.Type().Elem())
-			v.Set(ptr)
+			v.Set(reflect.New(v.Type().Elem()))
 		}
 
 		v = v.Elem()
