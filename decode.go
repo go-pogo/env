@@ -92,7 +92,7 @@ func (d *Decoder) decodeStruct(pv reflect.Value, p path) error {
 		case reflect.Invalid, reflect.Uintptr, reflect.Chan, reflect.Func, reflect.UnsafePointer:
 			continue
 
-		case reflect.Pointer:
+		case reflect.Ptr:
 			panic(panicPtr)
 
 		case reflect.Struct:
