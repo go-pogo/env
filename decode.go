@@ -16,16 +16,13 @@ import (
 
 const (
 	ErrStructPointerExpected errors.Msg = "expected a non-nil pointer to a struct"
-	ErrUnableToSet                      = parseval.ErrUnableToSet
-	ErrUnableToAddr                     = parseval.ErrUnableToAddr
 
 	InvalidActionError = parseval.InvalidActionError
 )
 
-var parser *parseval.Parser
+var parser parseval.Parser
 
 func init() {
-	parser = parseval.NewParser()
 	parser.Register(
 		reflect.TypeOf((*Unmarshaler)(nil)).Elem(),
 		func(val parseval.Value, dest interface{}) error {
@@ -47,7 +44,6 @@ func Unmarshal(data []byte, v interface{}) error {
 
 type Decoder struct {
 	src Lookupper
-	err error
 
 	// TagsOnly ignores fields that do not have an `env` tag when set to true.
 	TagsOnly bool
@@ -79,7 +75,7 @@ func (d *Decoder) Decode(v interface{}) error {
 	return d.decodeStruct(rv, nil)
 }
 
-const panicPtr = "parseval.Indirect should always resolve ptr values; this is a bug!"
+const panicPtr = "parseval.indirect should always resolve ptr values; this is a bug!"
 
 func (d *Decoder) decodeStruct(pv reflect.Value, p path) error {
 	pv = indirect(pv)
@@ -96,7 +92,7 @@ func (d *Decoder) decodeStruct(pv reflect.Value, p path) error {
 			panic(panicPtr)
 
 		case reflect.Struct:
-			if _, ok := parser.Func(rv.Type()); !ok {
+			if fn := parser.Func(rv.Type()); fn == nil {
 				// continue traversing the struct...
 				if err := d.decodeStruct(rv, p.extend(field.Name)); err != nil {
 					return err

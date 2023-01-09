@@ -5,6 +5,7 @@
 package env
 
 import (
+	"net"
 	"net/url"
 	"testing"
 	"time"
@@ -20,7 +21,7 @@ func ExampleUnmarshal() {
 			Url url.URL
 		}
 		Timeout time.Duration `default:"10s"`
-		//Ip      net.IP
+		Ip      net.IP
 	}
 
 	var data = `
@@ -41,7 +42,8 @@ IP=192.168.1.1`
 	//  Bar: (struct { Url url.URL }) {
 	//   Url: (url.URL) http://example.com
 	//  },
-	//  Timeout: (time.Duration) 10s
+	//  Timeout: (time.Duration) 10s,
+	//  Ip: (net.IP) (len=16 cap=16) 192.168.1.1
 	// }
 }
 
