@@ -3,8 +3,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-pogo/errors v0.7.5 h1:R0jUI8yYjkbwMkGUZ9HYXmNlLBpZzaU6RPTtrO1IsME=
 github.com/go-pogo/errors v0.7.5/go.mod h1:vM5HB8ZCky/aUzXkAs5SmU8VwUfwTWEiYFWWUlQQJys=
-github.com/go-pogo/parseval v0.2.1 h1:eB320k0D3mz0XvCSMXpp2JqbP2YHtAIGFuyvjYo6uoU=
-github.com/go-pogo/parseval v0.2.1/go.mod h1:7I9gKkll0WIWnQViU3l//6xu6zkb0023sUFXw2pVZis=
+github.com/go-pogo/parseval v0.2.2 h1:Z4zKkta4FyRMYGyc+0hkEgevMzcpoEagi517jfqSitM=
+github.com/go-pogo/parseval v0.2.2/go.mod h1:7I9gKkll0WIWnQViU3l//6xu6zkb0023sUFXw2pVZis=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
