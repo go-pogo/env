@@ -9,6 +9,7 @@ import (
 	"github.com/go-pogo/errors"
 	"io/fs"
 	"os"
+	"path"
 )
 
 type Environment string
@@ -23,10 +24,6 @@ const (
 	ErrNoFilesLoaded = "no files loaded"
 )
 
-func Read(dir string, ae Environment) *Reader {
-	return NewReader(os.DirFS(dir), ae)
-}
-
 var _ env.LookupMapCloser = new(Reader)
 
 type Reader struct {
@@ -39,6 +36,15 @@ type file struct {
 	name      string
 	reader    *env.FileReader
 	notExists bool
+}
+
+func Read(dir string, ae Environment) *Reader {
+	var fsys fs.FS
+	if dir != "" {
+		fsys = os.DirFS(dir)
+	}
+
+	return NewReader(fsys, ae)
 }
 
 func NewReader(fsys fs.FS, ae Environment) *Reader {
@@ -59,10 +65,16 @@ func (er *Reader) init(fsys fs.FS) {
 	if er.files != nil {
 		return
 	}
-
 	if fsys == nil {
-		fsys = os.DirFS("")
+		dir, err := os.Getwd()
+		if err != nil {
+			if dir, err = os.Executable(); err == nil {
+				dir = path.Dir(dir)
+			}
+		}
+		fsys = os.DirFS(dir)
 	}
+
 	er.fsys = fsys
 	er.found = make(env.Map, 8)
 	er.files = []*file{
@@ -97,12 +109,14 @@ func (er *Reader) Lookup(key string) (env.Value, error) {
 		return v, nil
 	}
 
+	var anyLoaded bool
 	for i := len(er.files) - 1; i >= 0; i-- {
 		r, err := er.reader(er.files[i])
 		if err != nil {
 			return "", err
 		}
 		if r == nil {
+			anyLoaded = true
 			continue
 		}
 
@@ -113,11 +127,16 @@ func (er *Reader) Lookup(key string) (env.Value, error) {
 		return v, err
 
 	}
+	if !anyLoaded {
+		return "", errors.New(ErrNoFilesLoaded)
+	}
+
 	return "", errors.New(env.ErrNotFound)
 }
 
 func (er *Reader) Map() (env.Map, error) {
 	er.init(nil)
+	var anyLoaded bool
 
 	res := make(env.Map, 8)
 	for _, f := range er.files {
@@ -126,6 +145,7 @@ func (er *Reader) Map() (env.Map, error) {
 			return res, err
 		}
 		if r == nil {
+			anyLoaded = true
 			continue
 		}
 
@@ -134,6 +154,9 @@ func (er *Reader) Map() (env.Map, error) {
 			return nil, err
 		}
 		res.MergeValues(m)
+	}
+	if !anyLoaded {
+		return nil, errors.New(ErrNoFilesLoaded)
 	}
 
 	er.found.MergeValues(res)
