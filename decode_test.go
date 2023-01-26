@@ -5,6 +5,7 @@
 package env
 
 import (
+	"fmt"
 	"net"
 	"net/url"
 	"testing"
@@ -32,7 +33,7 @@ IP=192.168.1.1`
 
 	var envs Envs
 	if err := Unmarshal([]byte(data), &envs); err != nil {
-		panic(err)
+		panic(fmt.Sprintf("%+v", err))
 	}
 
 	spew.Dump(envs)

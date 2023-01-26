@@ -114,13 +114,8 @@ func (d *Decoder) decodeStruct(pv reflect.Value, p path) error {
 }
 
 func (d *Decoder) decodeField(field reflect.StructField, rv reflect.Value, path path) error {
-	t, found := field.Tag.Lookup(envtag.Key)
-	if !found && d.TagsOnly {
-		return nil
-	}
-
-	tag := envtag.ParseTag(t)
-	if tag.Ignore {
+	tag := envtag.ParseStructTag(field.Tag)
+	if (tag.IsEmpty() && d.TagsOnly) || tag.Ignore {
 		return nil
 	}
 
@@ -133,14 +128,14 @@ func (d *Decoder) decodeField(field reflect.StructField, rv reflect.Value, path 
 	}
 
 	val, err := d.src.Lookup(tag.Name)
-	if IsNotFound(err) {
-		if def := field.Tag.Get("default"); def == "" {
-			return nil
-		} else {
-			val = Value(def)
+	if err != nil {
+		if !IsNotFound(err) {
+			return err
 		}
-	} else if err != nil {
-		return err
+		if tag.Default == "" {
+			return nil
+		}
+		val = Value(tag.Default)
 	}
 
 	return parser.Parse(val, rv)
