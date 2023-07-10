@@ -14,6 +14,14 @@ import (
 	"strings"
 )
 
+const SetenvError errors.Kind = "setenv error"
+
+// Setenv sets the value of the environment variable named by the key using
+// os.Setenv. Any error returned by os.Setenv is wrapped with SetenvError.
+func Setenv(key string, val Value) error {
+	return errors.WithKind(os.Setenv(key, val.String()), SetenvError)
+}
+
 // Getenv retrieves the Value of the environment variable named by the key.
 // It behaves similar to os.Getenv.
 func Getenv(key string) Value { return Value(os.Getenv(key)) }
