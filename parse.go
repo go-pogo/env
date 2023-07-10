@@ -23,6 +23,7 @@ const (
 	quoteDouble = '"'
 )
 
+// Value is an alias for parseval.Value.
 type Value = parseval.Value
 
 // Parse parses a string containing a possible key value pair. Any whitespace
@@ -47,14 +48,6 @@ func (e *ParseError) Unwrap() error { return e.Err }
 func (e *ParseError) Error() string {
 	return fmt.Sprintf("error while parsing `%s`", e.Str)
 }
-
-//func parseAndStore(str string, dest map[string]Value) (string, Value, error) {
-//	k, v, err := parse(str)
-//	if err == nil {
-//		dest[k] = v
-//	}
-//	return k, v, err
-//}
 
 func parse(str string) (string, Value, error) {
 	parts := strings.SplitAfterN(str, "=", 2)

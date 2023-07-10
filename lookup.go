@@ -14,11 +14,6 @@ type LookupperFunc func(key string) (Value, error)
 
 func (f LookupperFunc) Lookup(key string) (Value, error) { return f(key) }
 
-type LookupMapper interface {
-	Lookupper
-	Map() (Map, error)
-}
-
 // ErrNotFound is returned when a Lookup call cannot find a matching value.
 const ErrNotFound errors.Msg = "not found"
 
