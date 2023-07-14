@@ -16,7 +16,7 @@ import (
 
 const SetenvError errors.Kind = "setenv error"
 
-// Setenv sets the value of the environment variable named by the key using
+// Setenv sets the Value of the environment variable named by the key using
 // os.Setenv. Any error returned by os.Setenv is wrapped with SetenvError.
 func Setenv(key string, val Value) error {
 	return errors.WithKind(os.Setenv(key, val.String()), SetenvError)
@@ -49,6 +49,7 @@ func Environ() Map {
 	return res
 }
 
+// EnvironLookup returns a Lookupper which looks up environment variables.
 func EnvironLookup() Lookupper {
 	return LookupperFunc(func(key string) (Value, error) {
 		if v, ok := LookupEnv(key); ok {

@@ -40,17 +40,24 @@ func (m Map) Lookup(key string) (Value, error) {
 	return "", errors.New(ErrNotFound)
 }
 
-// Load sets the environment variables from the Map using os.Setenv.
-// It returns an error, if any occur within os.Setenv.
-func (m Map) Load() error {
+// Load sets the environment variables from the Map using os.Setenv when they
+// do not exist.
+func (m Map) Load() error { return m.load(false) }
+
+// Overload sets and overwrites the environment variables from the Map using
+// os.Setenv
+func (m Map) Overload() error { return m.load(true) }
+
+func (m Map) load(overload bool) error {
 	for k, v := range m {
-		if err := set(k, v, false); err != nil {
+		if err := set(k, v, overload); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
+// Clone returns a copy of the Map.
 func (m Map) Clone() Map {
 	clone := make(Map, len(m))
 	clone.MergeValues(m)
