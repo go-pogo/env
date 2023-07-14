@@ -8,7 +8,6 @@ import (
 	"github.com/go-pogo/errors"
 	"io"
 	"io/fs"
-	"os"
 )
 
 type Reader interface {
@@ -49,11 +48,7 @@ func NewFileReader(f fs.File) *FileReader {
 // *FileReader. It is the caller's responsibility to close the FileReader when
 // finished. If there is an error, it will be of type *os.PathError.
 func Open(filename string) (*FileReader, error) {
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return NewFileReader(f), nil
+	return OpenFS(osFS{}, filename)
 }
 
 // OpenFS opens the named file for reading from fsys and returns a new
