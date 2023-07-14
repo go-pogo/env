@@ -83,14 +83,13 @@ func (er *Reader) reader(f *file) (*env.FileReader, error) {
 
 	fr, err := env.OpenFS(er.fsys, f.name)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			f.notExists = true
 			return nil, nil
 		}
 		return nil, err
 	}
 
-	//log.Printf("dotenv.Reader: reading from `%s`\n", f.name)
 	f.reader = fr
 	f.notExists = false
 	return f.reader, nil
