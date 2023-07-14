@@ -9,6 +9,7 @@ type Environment string
 func (e Environment) String() string { return string(e) }
 
 const (
+	None        Environment = ""
 	Development Environment = "dev"
 	Testing     Environment = "test"
 	Production  Environment = "prod"
