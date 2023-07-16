@@ -18,19 +18,20 @@ type Scanner interface {
 	Bytes() []byte
 	Text() string
 	Scan() bool
+	KeyValue() (string, Value, error)
 }
 
 var _ Scanner = new(scanner)
 
-// scanner embeds a bufio.Scanner. Successive calls to the Scan method will,
-// just like bufio.Scanner, step through the 'tokens' of the read bytes,
-// skipping the bytes between the tokens.
 type scanner struct {
 	*bufio.Scanner
 }
 
 // NewScanner returns a new Scanner which wraps a bufio.Scanner that reads from
 // io.Reader r. The split function defaults to ScanLines.
+// Successive calls to the Scan method will (just like bufio.Scanner) step
+// through the 'tokens' of the read bytes, skipping the bytes between the
+// tokens.
 func NewScanner(r io.Reader) Scanner {
 	if r == nil {
 		return new(nilScanner)
@@ -80,9 +81,19 @@ func (s *scanner) Scan() bool {
 	return ok
 }
 
+func (s *scanner) KeyValue() (string, Value, error) {
+	line := s.Scanner.Text()
+	if line == "" {
+		return "", "", nil
+	}
+
+	return parse(line)
+}
+
 type nilScanner struct{}
 
-func (s *nilScanner) Err() error    { return nil }
-func (s *nilScanner) Bytes() []byte { return nil }
-func (s *nilScanner) Text() string  { return "" }
-func (s *nilScanner) Scan() bool    { return false }
+func (s *nilScanner) Err() error                       { return nil }
+func (s *nilScanner) Bytes() []byte                    { return nil }
+func (s *nilScanner) Text() string                     { return "" }
+func (s *nilScanner) Scan() bool                       { return false }
+func (s *nilScanner) KeyValue() (string, Value, error) { return "", "", nil }

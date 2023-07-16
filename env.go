@@ -14,6 +14,14 @@ import (
 	"strings"
 )
 
+const SetenvError errors.Kind = "setenv error"
+
+// Setenv sets the Value of the environment variable named by the key using
+// os.Setenv. Any error returned by os.Setenv is wrapped with SetenvError.
+func Setenv(key string, val Value) error {
+	return errors.WithKind(os.Setenv(key, val.String()), SetenvError)
+}
+
 // Getenv retrieves the Value of the environment variable named by the key.
 // It behaves similar to os.Getenv.
 func Getenv(key string) Value { return Value(os.Getenv(key)) }
@@ -41,6 +49,7 @@ func Environ() Map {
 	return res
 }
 
+// EnvironLookup returns a Lookupper which looks up environment variables.
 func EnvironLookup() Lookupper {
 	return LookupperFunc(func(key string) (Value, error) {
 		if v, ok := LookupEnv(key); ok {
@@ -48,42 +57,4 @@ func EnvironLookup() Lookupper {
 		}
 		return "", errors.New(ErrNotFound)
 	})
-}
-
-var _ Lookupper = new(Map)
-
-// Map represents a map of key value pairs.
-type Map map[string]Value
-
-// Merge any map of strings into this Map. Existing keys in Map are overwritten
-// with the value of the key in src.
-func (m Map) Merge(src map[string]string) {
-	for k, v := range src {
-		m[k] = Value(v)
-	}
-}
-
-// MergeValues merges a map of Value into this Map. Existing keys in Map m are
-// overwritten with the value of the key in src.
-func (m Map) MergeValues(src map[string]Value) {
-	for k, v := range src {
-		m[k] = v
-	}
-}
-
-// Lookup retrieves the Value of the environment variable named by the key.
-// If the key is present in Map, the value (which may be empty) is returned
-// and the boolean is true. Otherwise, the returned value will be empty and the
-// boolean is false.
-func (m Map) Lookup(key string) (Value, error) {
-	if v, ok := m[key]; ok {
-		return v, nil
-	}
-	return "", errors.New(ErrNotFound)
-}
-
-func (m Map) Clone() Map {
-	clone := make(Map, len(m))
-	clone.MergeValues(m)
-	return clone
 }
