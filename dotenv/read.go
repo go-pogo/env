@@ -136,16 +136,13 @@ func (er *Reader) Map() (env.Map, error) {
 		if err != nil {
 			return res, err
 		}
-		if r == nil {
-			anyLoaded = true
-			continue
-		}
 
 		m, err := r.Map()
 		if err != nil {
 			return nil, err
 		}
 		res.MergeValues(m)
+		anyLoaded = true
 	}
 	if !anyLoaded {
 		return nil, errors.New(ErrNoFilesLoaded)
