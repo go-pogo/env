@@ -25,7 +25,7 @@ func TestStructParser_ParseStructField(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		parser StructParser
+		parser *StructParser
 		field  reflect.StructField
 		want   Tag
 	}{
@@ -42,7 +42,7 @@ func TestStructParser_ParseStructField(t *testing.T) {
 			want:  Tag{Ignore: true, Default: "some value"},
 		},
 		"tags only": {
-			parser: StructParser{TagsOnly: true},
+			parser: &StructParser{TagsOnly: true},
 			field:  reflect.TypeOf(fixtureBasic{}).Field(0),
 			want:   Tag{},
 		},
@@ -54,6 +54,10 @@ func TestStructParser_ParseStructField(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			if tc.parser == nil {
+				tc.parser = new(StructParser)
+			}
+
 			have := tc.parser.ParseStructField(tc.field)
 			assert.Equal(t, tc.want, have)
 		})
