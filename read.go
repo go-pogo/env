@@ -37,6 +37,10 @@ func NewReader(r io.Reader) Reader {
 	}
 }
 
+func NewStringReader(str string) Reader {
+	return NewReader(strings.NewReader(str))
+}
+
 func NewFileReader(f fs.File) *FileReader {
 	return &FileReader{
 		Reader: NewReader(f),
