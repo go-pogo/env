@@ -9,7 +9,7 @@ env
 
 [latest-release-url]: https://github.com/go-pogo/env/releases
 
-[build-status-img]: https://github.com/go-pogo/env/workflows/Test/badge.svg
+[build-status-img]: https://github.com/go-pogo/env/actions/workflows/test.yml/badge.svg
 
 [build-status-url]: https://github.com/go-pogo/env/actions/workflows/test.yml
 
