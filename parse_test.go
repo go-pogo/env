@@ -23,9 +23,8 @@ func TestParse(t *testing.T) {
 
 		for input, wantErr := range tests {
 			t.Run(input, func(t *testing.T) {
-				haveKey, haveVal, haveErr := Parse(input)
-				assert.Empty(t, haveKey)
-				assert.Empty(t, haveVal)
+				have, haveErr := Parse(input)
+				assert.Equal(t, NamedValue{}, have)
 
 				if wantErr == nil {
 					assert.Nil(t, haveErr)
@@ -36,46 +35,46 @@ func TestParse(t *testing.T) {
 		}
 	})
 
-	t.Run("keys", func(t *testing.T) {
+	t.Run("names", func(t *testing.T) {
 		tests := map[string]struct {
-			wantErr error
-			wantKey string
 			input   string
+			want    string
+			wantErr error
 		}{
 			"empty": {
 				input:   "",
 				wantErr: ErrEmptyKey,
 			},
 			"plain": {
-				input:   "foo",
-				wantKey: "foo",
+				input: "foo",
+				want:  "foo",
 			},
 			"whitespace": {
-				input:   "\tyolo  ",
-				wantKey: "yolo",
+				input: "\tyolo  ",
+				want:  "yolo",
 			},
 			"whitespace left": {
-				input:   " bar",
-				wantKey: "bar",
+				input: " bar",
+				want:  "bar",
 			},
 			"whitespace right": {
-				input:   "qux\t",
-				wantKey: "qux",
+				input: "qux\t",
+				want:  "qux",
 			},
 			"export": {
 				input:   "export ",
 				wantErr: ErrEmptyKey,
 			},
 			"export as valid key": {
-				input:   "export",
-				wantKey: "export",
+				input: "export",
+				want:  "export",
 			},
 		}
 
 		for name, tc := range tests {
 			t.Run(name, func(t *testing.T) {
-				haveKey, _, haveErr := Parse(tc.input + "=some value")
-				assert.Exactly(t, tc.wantKey, haveKey)
+				have, haveErr := Parse(tc.input + "=some value")
+				assert.Exactly(t, tc.want, have.Name)
 
 				if tc.wantErr == nil {
 					assert.Nil(t, haveErr)
@@ -88,9 +87,9 @@ func TestParse(t *testing.T) {
 
 	t.Run("values", func(t *testing.T) {
 		tests := map[string]struct {
-			wantErr error
-			wantVal Value
 			input   []string // value parts
+			want    Value
+			wantErr error
 		}{
 			"empty": {
 				input: []string{
@@ -110,26 +109,26 @@ func TestParse(t *testing.T) {
 					`'this is \'a quote\'!'`,
 					`"this is 'a quote'!"`,
 				},
-				wantVal: "this is 'a quote'!",
+				want: "this is 'a quote'!",
 			},
 			"double quote in value": {
 				input: []string{
 					`'"double" quotes FTW'`,
 					`"\"double\" quotes FTW"`,
 				},
-				wantVal: `"double" quotes FTW`,
+				want: `"double" quotes FTW`,
 			},
 			"escape sequence": {
-				input:   []string{`'\\\''`},
-				wantVal: `\'`,
+				input: []string{`'\\\''`},
+				want:  `\'`,
 			},
 			"escape sequence 2": {
-				input:   []string{`'\\\\'`},
-				wantVal: `\\`,
+				input: []string{`'\\\\'`},
+				want:  `\\`,
 			},
 			"escape sequence 3": {
-				input:   []string{`'\\\\\\'`},
-				wantVal: `\\\`,
+				input: []string{`'\\\\\\'`},
+				want:  `\\\`,
 			},
 			"comment at end": {
 				input: []string{
@@ -137,14 +136,14 @@ func TestParse(t *testing.T) {
 					"'bar' #comment",
 					`"bar"#comment`,
 				},
-				wantVal: "bar",
+				want: "bar",
 			},
 			"hash in value": {
 				input: []string{
 					"'#xoo' ",
 					`"#xoo"`,
 				},
-				wantVal: "#xoo",
+				want: "#xoo",
 			},
 			"missing endquote": {
 				input: []string{
@@ -161,9 +160,9 @@ func TestParse(t *testing.T) {
 			for _, input := range tc.input {
 				t.Run(name, func(t *testing.T) {
 					input = "someKey=" + input
-					_, haveVal, haveErr := Parse(input)
+					have, haveErr := Parse(input)
 
-					assert.Exactly(t, tc.wantVal, haveVal, "parsing `"+input+"` failed")
+					assert.Exactly(t, tc.want, have.Value, "parsing `"+input+"` failed")
 					if tc.wantErr == nil {
 						assert.Nil(t, haveErr)
 					} else {

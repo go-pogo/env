@@ -17,23 +17,23 @@ const (
 	ErrInvalidFormat   errors.Msg = "invalid format"
 	ErrMissingEndQuote errors.Msg = "missing end quote"
 	ErrEmptyKey        errors.Msg = "empty key"
-
-	commentHash = '#'
-	quoteSingle = '\''
-	quoteDouble = '"'
 )
 
 // Value is an alias for parseval.Value.
 type Value = parseval.Value
 
+type NamedValue struct {
+	Name  string
+	Value Value
+}
+
 // Parse parses a string containing a possible key value pair. Any whitespace
-// at the start and/or end of str is trimmed.
-// It returns an empty key value pair when the provided str, after trimming,
-// begins with #.
-func Parse(str string) (string, Value, error) {
+// at the start and/or end of str is trimmed. It returns an empty NamedValue
+// when the provided str, after trimming, begins with #.
+func Parse(str string) (NamedValue, error) {
 	str = strings.TrimSpace(str)
-	if str == "" || str[0] == commentHash {
-		return "", "", nil
+	if str == "" || str[0] == '#' {
+		return NamedValue{}, nil
 	}
 	return parse(str)
 }
@@ -49,10 +49,10 @@ func (e *ParseError) Error() string {
 	return fmt.Sprintf("error while parsing `%s`", e.Str)
 }
 
-func parse(str string) (string, Value, error) {
+func parse(str string) (NamedValue, error) {
 	parts := strings.SplitAfterN(str, "=", 2)
 	if len(parts) != 2 {
-		return "", "", errors.WithStack(&ParseError{
+		return NamedValue{}, errors.WithStack(&ParseError{
 			Err: ErrInvalidFormat,
 			Str: str,
 		})
@@ -60,7 +60,7 @@ func parse(str string) (string, Value, error) {
 
 	n := len(parts[0]) - 1
 	if n == 0 {
-		return "", "", errors.WithStack(&ParseError{
+		return NamedValue{}, errors.WithStack(&ParseError{
 			Err: ErrEmptyKey,
 			Str: str,
 		})
@@ -78,7 +78,7 @@ func parse(str string) (string, Value, error) {
 		key = strings.TrimSpace(key[:n-1])
 	}
 	if key == "" {
-		return "", "", errors.WithStack(&ParseError{
+		return NamedValue{}, errors.WithStack(&ParseError{
 			Err: ErrEmptyKey,
 			Str: str,
 		})
@@ -86,7 +86,7 @@ func parse(str string) (string, Value, error) {
 
 	val := parts[1]
 	if val == "" {
-		return key, Value(val), nil
+		return NamedValue{key, Value(val)}, nil
 	}
 
 	if unicode.IsSpace(rune(val[0])) {
@@ -95,26 +95,26 @@ func parse(str string) (string, Value, error) {
 
 	var err error
 	switch true {
-	case val[0] == quoteSingle:
-		val, err = parseQuotedValue(val[1:], quoteSingle)
+	case val[0] == '\'':
+		val, err = parseQuotedValue(val[1:], '\'')
 		if err != nil {
-			return "", "", errors.WithStack(&ParseError{
+			return NamedValue{}, errors.WithStack(&ParseError{
 				Err: err,
 				Str: str,
 			})
 		}
 
-	case val[0] == quoteDouble:
-		val, err = parseQuotedValue(val[1:], quoteDouble)
+	case val[0] == '"':
+		val, err = parseQuotedValue(val[1:], '"')
 		if err != nil {
-			return "", "", errors.WithStack(&ParseError{
+			return NamedValue{}, errors.WithStack(&ParseError{
 				Err: err,
 				Str: str,
 			})
 		}
 
 	default:
-		i := strings.IndexRune(val, commentHash)
+		i := strings.IndexRune(val, '#')
 		if i == 0 {
 			val = ""
 		} else if i > 0 {
@@ -122,7 +122,7 @@ func parse(str string) (string, Value, error) {
 		}
 	}
 
-	return key, Value(val), nil
+	return NamedValue{key, Value(val)}, nil
 }
 
 func parseQuotedValue(val string, q rune) (string, error) {
