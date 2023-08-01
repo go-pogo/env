@@ -5,59 +5,112 @@
 package env
 
 import (
-	"fmt"
-	"net"
-	"net/url"
-	"testing"
-	"time"
-
-	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
+	"reflect"
+	"testing"
 )
 
-func ExampleUnmarshal() {
-	type Envs struct {
-		Foo string
-		Bar struct {
-			Url url.URL
-		}
-		Timeout time.Duration `default:"10s"`
-		Ip      net.IP
+func TestDecoder_Decode(t *testing.T) {
+	type fixtureBasic struct {
+		Foo    string
+		Ignore bool
 	}
 
-	var data = `
+	type fixtureBasic2 struct {
+		Foo    string
+		Ignore bool `env:"-"`
+	}
+
+	type fixtureBasic3 struct {
+		Foo    string `env:"CUSTOM_NAME,noprefix"`
+		Ignore bool   `env:"-"`
+	}
+
+	type fixtureNested struct {
+		Qux    string
+		Nested fixtureBasic
+	}
+
+	type fixtureNested2 struct {
+		Qux    string
+		Nested fixtureBasic3
+	}
+
+	type fixtureInline struct {
+		Qux    string
+		Inline fixtureBasic2 `env:",inline"`
+	}
+
+	type fixtureNoPrefix struct {
+		DeepNested fixtureNested2
+	}
+
+	tests := map[string]struct {
+		input   string
+		opts    Decoder
+		want    interface{}
+		wantErr error
+	}{
+		"basic": {
+			input:   "FOO=bar\nIGNORE=true",
+			want:    &fixtureBasic{Foo: "bar", Ignore: true},
+			wantErr: nil,
+		},
+		"basic with ignored field": {
+			input:   "FOO=bar\nIGNORE=true",
+			want:    &fixtureBasic2{Foo: "bar"},
+			wantErr: nil,
+		},
+		"basic with TagsOnly": {
+			input:   "CUSTOM_NAME=bar\nIGNORE=true",
+			opts:    Decoder{ReplaceVars: true},
+			want:    &fixtureBasic3{Foo: "bar"},
+			wantErr: nil,
+		},
+		"nested": {
+			input: "QUX=x00\nNESTED_FOO=bar",
+			want:  &fixtureNested{Qux: "x00", Nested: fixtureBasic{Foo: "bar"}},
+		},
+		"inline": {
+			input: `
+QUX=x00
 FOO=bar
-# ignore me
-BAR_URL=http://example.com
-IP=192.168.1.1`
-
-	var envs Envs
-	if err := Unmarshal([]byte(data), &envs); err != nil {
-		panic(fmt.Sprintf("%+v", err))
+IGNORE=true
+INLINE_FOO=not used`,
+			want: &fixtureInline{
+				Qux: "x00",
+				Inline: fixtureBasic2{
+					Foo: "bar",
+				},
+			},
+		},
+		"noPrefix": {
+			input: "CUSTOM_NAME=bar\nDEEPNESTED_QUX=xoo",
+			want: &fixtureNoPrefix{
+				DeepNested: fixtureNested2{
+					Qux: "xoo",
+					Nested: fixtureBasic3{
+						Foo: "bar",
+					},
+				},
+			},
+		},
 	}
 
-	spew.Dump(envs)
-	// Output:
-	// (env.Envs) {
-	//  Foo: (string) (len=3) "bar",
-	//  Bar: (struct { Url url.URL }) {
-	//   Url: (url.URL) http://example.com
-	//  },
-	//  Timeout: (time.Duration) 10s,
-	//  Ip: (net.IP) (len=16 cap=16) 192.168.1.1
-	// }
-}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			have := reflect.New(reflect.ValueOf(tc.want).Elem().Type()).Interface()
 
-func TestUnmarshal(t *testing.T) {
-	t.Run("basic", func(t *testing.T) {
-		type fixture struct {
-			Foo    string
-			Ignore bool `env:"-"`
-		}
+			dec := NewDecoder(NewStringReader(tc.input))
+			dec.TagsOnly = tc.opts.TagsOnly
+			haveErr := dec.Decode(have)
 
-		var have fixture
-		haveErr := Unmarshal([]byte("FOO=bar\nIGNORE=true"), &have)
-		assert.Exactly(t, fixture{Foo: "bar"}, have)
-		assert.Nil(t, haveErr)
-	})
+			if tc.wantErr == nil {
+				assert.NoError(t, haveErr)
+			} else {
+				assert.ErrorIs(t, tc.wantErr, haveErr)
+			}
+			assert.Exactly(t, tc.want, have)
+		})
+	}
 }
