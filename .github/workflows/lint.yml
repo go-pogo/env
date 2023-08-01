@@ -12,4 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
+        with:
+          go-version: stable
       - uses: golangci/golangci-lint-action@v3
