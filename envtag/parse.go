@@ -5,6 +5,7 @@
 package envtag
 
 import (
+	"reflect"
 	"strings"
 )
 
@@ -12,13 +13,57 @@ const (
 	ignore   = "-"
 	inline   = "inline"   // inline means ignore name of parent field
 	noPrefix = "noprefix" // noprefix means ignore all parent field names
+
+	EnvKey     = "env"
+	DefaultKey = "default"
 )
+
+type Options struct {
+	EnvKey     string
+	DefaultKey string
+
+	// TagsOnly ignores fields that do not have an `env` tag when set to true.
+	TagsOnly bool
+}
+
+// Defaults sets the default values for Options.
+func (o *Options) Defaults() {
+	o.EnvKey = EnvKey
+	o.DefaultKey = DefaultKey
+	o.TagsOnly = false
+}
 
 // ParseTag parses str into a Tag.
 func ParseTag(str string) Tag {
 	var t Tag
 	parse(&t, str)
 	return t
+}
+
+func ParseStructField(opts Options, field reflect.StructField) Tag {
+	var tag Tag
+	if !field.IsExported() {
+		tag.Ignore = true
+		return tag
+	}
+
+	if str, found := field.Tag.Lookup(opts.EnvKey); found {
+		parse(&tag, str)
+	} else if !found && opts.TagsOnly {
+		tag.Ignore = true
+		return tag
+	}
+
+	if tag.Ignore {
+		return tag
+	}
+	if tag.Name == "" {
+		tag.Name = strings.ToUpper(field.Name)
+	}
+	if opts.DefaultKey != "" {
+		tag.Default = field.Tag.Get(opts.DefaultKey)
+	}
+	return tag
 }
 
 func parse(tag *Tag, str string) {
