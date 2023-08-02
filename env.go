@@ -2,10 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-/*
-Package env handles reading and decoding of environment variables from files or
-other data sources.
-*/
 package env
 
 import (
@@ -14,12 +10,10 @@ import (
 	"strings"
 )
 
-const SetenvError errors.Kind = "setenv error"
-
 // Setenv sets the Value of the environment variable named by the key using
-// os.Setenv. Any error returned by os.Setenv is wrapped with SetenvError.
+// os.Setenv.
 func Setenv(key string, val Value) error {
-	return errors.WithKind(os.Setenv(key, val.String()), SetenvError)
+	return os.Setenv(key, val.String())
 }
 
 // Getenv retrieves the Value of the environment variable named by the key.

@@ -10,6 +10,14 @@ import (
 	"testing"
 )
 
+func TestSetenv(t *testing.T) {
+	t.Run("err", func(t *testing.T) {
+		wantErr := os.Setenv("", "foobar")
+		haveErr := Setenv("", "foobar")
+		assert.EqualError(t, haveErr, wantErr.Error())
+	})
+}
+
 func TestEnviron(t *testing.T) {
 	source := os.Environ()
 	target := Environ()
@@ -87,8 +95,15 @@ func TestLookup(t *testing.T) {
 			if tc.wantErr == nil {
 				assert.Nil(t, haveErr)
 			} else {
-				assert.ErrorIs(t, haveErr, ErrNotFound)
+				assert.True(t, IsNotFound(haveErr))
 			}
 		})
 	}
+}
+
+func TestEnvironLookup(t *testing.T) {
+	t.Run("not found", func(t *testing.T) {
+		_, err := EnvironLookup().Lookup(randKey())
+		assert.True(t, IsNotFound(err))
+	})
 }
