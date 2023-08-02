@@ -10,6 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewScanner(t *testing.T) {
+	t.Run("nil reader", func(t *testing.T) {
+		assert.PanicsWithValue(t, panicNilReader, func() { NewScanner(nil) })
+	})
+}
+
 func TestScanner(t *testing.T) {
 	tests := map[string]struct {
 		input string
