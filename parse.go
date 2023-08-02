@@ -19,7 +19,7 @@ const (
 	ErrEmptyKey        errors.Msg = "empty key"
 )
 
-// Value is an alias for parseval.Value.
+// Value is an alias of parseval.Value.
 type Value = parseval.Value
 
 type NamedValue struct {
