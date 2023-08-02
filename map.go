@@ -6,6 +6,7 @@ package env
 
 import (
 	"github.com/go-pogo/errors"
+	"os"
 )
 
 var _ Lookupper = new(Map)
@@ -55,6 +56,17 @@ func (m Map) load(overload bool) error {
 		}
 	}
 	return nil
+}
+
+func set(key string, val Value, overload bool) error {
+	if !overload {
+		_, exists := os.LookupEnv(key)
+		if exists {
+			return nil
+		}
+	}
+
+	return Setenv(key, val)
 }
 
 // Clone returns a copy of the Map.

@@ -6,6 +6,14 @@ package env
 
 import "github.com/go-pogo/errors"
 
+// ErrNotFound is returned when a Lookup call cannot find a matching key.
+const ErrNotFound errors.Msg = "not found"
+
+// IsNotFound tests whether the provided error is ErrNotFound.
+func IsNotFound(err error) bool {
+	return errors.Is(errors.Unembed(err), ErrNotFound)
+}
+
 type Lookupper interface {
 	// Lookup retrieves the Value of the environment variable named by the key.
 	// It must return an ErrNotFound error if the key is not present.
@@ -15,14 +23,6 @@ type Lookupper interface {
 type LookupperFunc func(key string) (Value, error)
 
 func (f LookupperFunc) Lookup(key string) (Value, error) { return f(key) }
-
-// ErrNotFound is returned when a Lookup call cannot find a matching key.
-const ErrNotFound errors.Msg = "not found"
-
-// IsNotFound tests whether the provided error is ErrNotFound.
-func IsNotFound(err error) bool {
-	return errors.Is(err, ErrNotFound)
-}
 
 // Lookup retrieves the Value of the environment variable named by the key
 // from any of the provided Lookupper(s).

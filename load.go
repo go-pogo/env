@@ -61,31 +61,10 @@ func LoadFrom(r io.Reader) error { return readAndLoad(r, false) }
 func OverloadFrom(r io.Reader) error { return readAndLoad(r, true) }
 
 func readAndLoad(r io.Reader, overload bool) error {
-	scan := NewScanner(r)
-	for scan.Scan() {
-		if err := scan.Err(); err != nil {
-			return err
-		}
-
-		k, v, err := scan.KeyValue()
-		if err != nil {
-			return err
-		}
-
-		if err = set(k, v, overload); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func set(key string, val Value, overload bool) error {
-	if !overload {
-		_, exists := os.LookupEnv(key)
-		if exists {
-			return nil
-		}
+	m, err := NewReader(r).ReadAll()
+	if err != nil {
+		return err
 	}
 
-	return Setenv(key, val)
+	return ReplaceVars(m).load(overload)
 }
