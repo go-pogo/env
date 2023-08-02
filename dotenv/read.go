@@ -126,7 +126,7 @@ func (er *Reader) Lookup(key string) (env.Value, error) {
 	return "", errors.New(env.ErrNotFound)
 }
 
-func (er *Reader) Map() (env.Map, error) {
+func (er *Reader) ReadAll() (env.Map, error) {
 	er.init(nil)
 	var anyLoaded bool
 
@@ -137,10 +137,11 @@ func (er *Reader) Map() (env.Map, error) {
 			return res, err
 		}
 
-		m, err := r.Map()
+		m, err := r.ReadAll()
 		if err != nil {
 			return nil, err
 		}
+
 		res.MergeValues(m)
 		anyLoaded = true
 	}
