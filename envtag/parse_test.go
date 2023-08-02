@@ -5,28 +5,53 @@
 package envtag
 
 import (
+	"github.com/go-pogo/errors"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 )
 
 func TestParseTag(t *testing.T) {
-	tests := map[string]Tag{
-		"":                 {},
-		"-":                {Ignore: true},
-		"-,noprefix":       {Ignore: true},
-		"foo":              {Name: "foo"},
-		"foo,inline":       {Name: "foo", Inline: true},
-		"foo,noprefix":     {Name: "foo", NoPrefix: true},
-		"FOOBAR":           {Name: "FOOBAR"},
-		"noprefix":         {Name: "noprefix"},
-		",noprefix":        {NoPrefix: true},
-		",inline,noprefix": {Inline: true, NoPrefix: true},
+	tests := map[string]struct {
+		wantTag Tag
+		wantErr error
+	}{
+		"":                 {wantTag: Tag{}},
+		"-":                {wantTag: Tag{Ignore: true}},
+		"-,noprefix":       {wantTag: Tag{Ignore: true}},
+		"foo":              {wantTag: Tag{Name: "foo"}},
+		"foo,inline,":      {wantTag: Tag{Name: "foo", Inline: true}},
+		"foo,,noprefix":    {wantTag: Tag{Name: "foo", NoPrefix: true}},
+		"FOOBAR":           {wantTag: Tag{Name: "FOOBAR"}},
+		"noprefix":         {wantTag: Tag{Name: "noprefix"}},
+		",noprefix":        {wantTag: Tag{NoPrefix: true}},
+		",inline,noprefix": {wantTag: Tag{Inline: true, NoPrefix: true}},
+
+		",inline,invalid": {
+			wantTag: Tag{Inline: true},
+			wantErr: &Error{
+				TagString:   ",inline,invalid",
+				Unsupported: []string{"invalid"},
+			},
+		},
+		",extra1 ,noprefix,extra2,": {
+			wantTag: Tag{NoPrefix: true},
+			wantErr: &Error{
+				TagString:   ",extra1 ,noprefix,extra2,",
+				Unsupported: []string{"extra1 ", "extra2"},
+			},
+		},
 	}
 
-	for tag, want := range tests {
+	for tag, tc := range tests {
 		t.Run(tag, func(t *testing.T) {
-			assert.Equal(t, want, ParseTag(tag))
+			have, haveErr := ParseTag(tag)
+			assert.Equal(t, tc.wantTag, have)
+			if tc.wantErr == nil {
+				assert.NoError(t, haveErr)
+			} else {
+				assert.Equal(t, tc.wantErr, errors.Unembed(haveErr))
+			}
 		})
 	}
 }
@@ -80,7 +105,7 @@ func TestParseStructField(t *testing.T) {
 				tc.opts.Defaults()
 			}
 
-			have := ParseStructField(*tc.opts, tc.field)
+			have, _ := ParseStructField(*tc.opts, tc.field)
 			assert.Equal(t, tc.want, have)
 		})
 	}

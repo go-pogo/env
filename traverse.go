@@ -31,7 +31,7 @@ func (t *traverser) traverse(pv reflect.Value, prefix string) error {
 			panic(panicPtr)
 		}
 
-		tag := envtag.ParseStructField(*t.Options, field)
+		tag, _ := envtag.ParseStructField(*t.Options, field)
 		if tag.ShouldIgnore() {
 			continue
 		}
