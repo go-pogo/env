@@ -5,6 +5,7 @@
 package dotenv
 
 import (
+	"github.com/go-pogo/env"
 	"io/fs"
 )
 
@@ -26,11 +27,12 @@ func OverloadFS(fsys fs.FS, ae Environment) error {
 
 func readAndLoad(r *Reader, overload bool) error {
 	defer r.Close()
-	m, err := r.Map()
+	m, err := r.ReadAll()
 	if err != nil {
 		return err
 	}
 
+	m = env.ReplaceVars(m)
 	if overload {
 		return m.Overload()
 	} else {
