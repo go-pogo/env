@@ -32,21 +32,6 @@ func (e *Error) Error() string {
 	return "error while parsing tag `" + e.TagString + "`"
 }
 
-type Options struct {
-	EnvKey     string
-	DefaultKey string
-
-	// TagsOnly ignores fields that do not have an `env` tag when set to true.
-	TagsOnly bool
-}
-
-// Defaults sets the default values for Options.
-func (o *Options) Defaults() {
-	o.EnvKey = EnvKey
-	o.DefaultKey = DefaultKey
-	o.TagsOnly = false
-}
-
 // ParseTag parses str into a Tag. It will always return a usable Tag, even if
 // an error has occurred.
 func ParseTag(str string) (Tag, error) {
@@ -76,7 +61,11 @@ func ParseStructField(opts Options, field reflect.StructField) (tag Tag, err err
 		return
 	}
 	if tag.Name == "" {
-		tag.Name = strings.ToUpper(field.Name)
+		if opts.Normalize != nil {
+			tag.Name = opts.Normalize(field.Name)
+		} else {
+			tag.Name = field.Name
+		}
 	}
 	if opts.DefaultKey != "" {
 		tag.Default = field.Tag.Get(opts.DefaultKey)
