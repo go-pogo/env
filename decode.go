@@ -9,6 +9,7 @@ import (
 	"github.com/go-pogo/env/envtag"
 	"github.com/go-pogo/errors"
 	"github.com/go-pogo/parseval"
+	"io"
 	"reflect"
 )
 
@@ -54,14 +55,25 @@ type Decoder struct {
 //
 //	dec := NewDecoder(NewReader(r))
 func NewDecoder(src ...Lookupper) *Decoder {
-	d := &Decoder{
-		Lookupper:   Chain(src...),
-		ReplaceVars: true,
-	}
+	var d Decoder
+	d.init(Chain(src...))
+	return &d
+}
+
+// NewReaderDecoder returns a new Decoder similar to calling NewDecoder with
+// NewReader. It looks up environment variables from the new Reader.
+func NewReaderDecoder(r io.Reader) *Decoder {
+	var d Decoder
+	d.init(NewReader(r))
+	return &d
+}
+
+func (d *Decoder) init(l Lookupper) {
+	d.Lookupper = l
+	d.ReplaceVars = true
 	d.Options.Defaults()
 	d.traverser.Options = &d.Options
 	d.traverser.HandleField = d.decodeField
-	return d
 }
 
 func (d *Decoder) Decode(v interface{}) error {
