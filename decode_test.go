@@ -42,7 +42,7 @@ func TestDecoder_Decode(t *testing.T) {
 	}
 
 	type fixtureNoPrefix struct {
-		DeepNested fixtureNested2
+		DeepNested fixtureNested2 `env:"DEEPNESTED"`
 	}
 
 	tests := map[string]struct {
