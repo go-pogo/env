@@ -8,31 +8,39 @@ import (
 	"strings"
 )
 
-type NormalizeFunc func(str string) string
-
-type Options struct {
-	// EnvKey is used to lookup the env tag string from a reflect.StructTag.
-	EnvKey string
-	// DefaultKey is used to lookup the default value string from a
-	// reflect.StructTag.
-	DefaultKey string
-	// Normalize is used to normalize a reflect.StructField's name
-	// when no name is provided in the env tag string.
-	Normalize NormalizeFunc
-	// TagsOnly ignores fields that do not have an env tag when set to true.
-	TagsOnly bool
+type Normalizer interface {
+	Normalize(str string) string
 }
 
-// Defaults sets the default values for Options.
-func (o *Options) Defaults() {
-	o.EnvKey = EnvKey
-	o.DefaultKey = DefaultKey
-	o.Normalize = NormalizeFieldName
-	o.TagsOnly = false
+type NormalizerFunc func(str string) string
+
+func (f NormalizerFunc) Normalize(str string) string { return f(str) }
+
+type Options struct {
+	// EnvKey is used to look up the env tag string from a reflect.StructTag.
+	EnvKey string
+	// DefaultKey is used to look up the default value string from a
+	// reflect.StructTag.
+	DefaultKey string
+	// Normalizer is used to normalize a reflect.StructField's name
+	// when no name is provided in the env tag string.
+	Normalizer Normalizer
+	// StrictTags ignores fields that do not have an env tag when set to true.
+	StrictTags bool
+}
+
+// DefaultOptions returns an Options with default values.
+func DefaultOptions() Options {
+	return Options{
+		EnvKey:     EnvKey,
+		DefaultKey: DefaultKey,
+		Normalizer: NormalizerFunc(NormalizeFieldName),
+		StrictTags: false,
+	}
 }
 
 // NormalizeFieldName normalizes struct field names to a format that is commonly
-// used in environment variables, eg. MyFieldName becomes MY_FIELD_NAME.
+// used in environment variables, e.g. MyFieldName becomes MY_FIELD_NAME.
 func NormalizeFieldName(fieldName string) string {
 	var buf strings.Builder
 	buf.Grow(len(fieldName) + 3)

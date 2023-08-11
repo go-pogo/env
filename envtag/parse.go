@@ -13,14 +13,6 @@ import (
 const (
 	EnvKey     = "env"
 	DefaultKey = "default"
-
-	// ignore current field + children
-	ignore = "-"
-	// inline means ignore name of current field, as if child fields are part
-	// of parent
-	inline = "inline"
-	// noprefix means ignore all parent field names
-	noprefix = "noprefix"
 )
 
 type Error struct {
@@ -40,6 +32,8 @@ func ParseTag(str string) (Tag, error) {
 	return t, err
 }
 
+const panicNormalizerEmptyName = "envtag: Normalizer returned an empty name"
+
 // ParseStructField uses the field's reflect.StructTag to lookup the tag string
 // according to the provided Options. It will always return a usable Tag, even
 // if an error has occurred.
@@ -52,7 +46,7 @@ func ParseStructField(opts Options, field reflect.StructField) (tag Tag, err err
 	if str, found := field.Tag.Lookup(opts.EnvKey); found {
 		// err warns for unsupported tag options, so continue parsing
 		err = parse(&tag, str)
-	} else if !found && opts.TagsOnly {
+	} else if !found && opts.StrictTags {
 		tag.Ignore = true
 		return
 	}
@@ -61,9 +55,14 @@ func ParseStructField(opts Options, field reflect.StructField) (tag Tag, err err
 		return
 	}
 	if tag.Name == "" {
-		if opts.Normalize != nil {
-			tag.Name = opts.Normalize(field.Name)
+		if opts.Normalizer != nil {
+			tag.Name = opts.Normalizer.Normalize(field.Name)
+			if tag.Name == "" {
+				panic(panicNormalizerEmptyName)
+			}
 		} else {
+			// use field name as is, it is the callers responsibility to set a
+			// valid Normalizer
 			tag.Name = field.Name
 		}
 	}
@@ -77,6 +76,8 @@ func parse(tag *Tag, str string) error {
 	if str == "" {
 		return nil
 	}
+
+	const ignore = "-"
 	if str == ignore {
 		tag.Ignore = true
 		return nil
@@ -94,10 +95,12 @@ func parse(tag *Tag, str string) error {
 	for i, n := 0, len(split); i < n; {
 		switch strings.TrimSpace(split[i]) {
 		case "":
-			// empty is ignored, but is considered a valid option
-		case inline:
+			// empty option is ignored
+		case "inline":
 			tag.Inline = true
-		case noprefix:
+		case "include":
+			tag.Include = true
+		case "noprefix":
 			tag.NoPrefix = true
 		default:
 			// invalid options increment the index position,

@@ -17,3 +17,15 @@ func TestTag_IsEmpty(t *testing.T) {
 		assert.False(t, Tag{Name: "foo"}.IsEmpty())
 	})
 }
+
+func TestTag_ShouldIgnore(t *testing.T) {
+	t.Run("empty name", func(t *testing.T) {
+		assert.True(t, Tag{Name: ""}.ShouldIgnore())
+	})
+	t.Run("ignore", func(t *testing.T) {
+		assert.True(t, Tag{Ignore: true}.ShouldIgnore())
+	})
+	t.Run("name", func(t *testing.T) {
+		assert.False(t, Tag{Name: "foobar"}.ShouldIgnore())
+	})
+}

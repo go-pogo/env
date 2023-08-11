@@ -24,6 +24,12 @@ func TestNormalizeFieldName(t *testing.T) {
 		"FooBARBaz":    "FOO_BAR_BAZ",
 		"FooBAR123Baz": "FOO_BAR_123_BAZ",
 		"FooBarBAZ":    "FOO_BAR_BAZ",
+
+		// below special cases probably result in an unexpected normalized name
+		// but it's not worth the effort to fix this right now. a workaround
+		// would be to set the right name using an env tag on the struct field.
+		"SomeGraphQL": "SOME_GRAPH_QL", // SOME_GRAPHQL
+		"PostgreSQL":  "POSTGRE_SQL",   // POSTGRESQL
 	}
 	for name, want := range tests {
 		t.Run(name, func(t *testing.T) {
