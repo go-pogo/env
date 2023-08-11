@@ -36,7 +36,7 @@ type Unmarshaler interface {
 }
 
 func Unmarshal(data []byte, v interface{}) error {
-	return NewDecoder(NewReader(bytes.NewBuffer(data))).Decode(v)
+	return NewDecoder(NewReader(bytes.NewReader(data))).Decode(v)
 }
 
 var _ Lookupper = new(Decoder)
