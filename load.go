@@ -65,6 +65,9 @@ func readAndLoad(r io.Reader, overload bool) error {
 	if err != nil {
 		return err
 	}
+	if m, err = ReplaceAll(m); err != nil {
+		return err
+	}
 
-	return ReplaceVars(m).load(overload)
+	return m.load(overload)
 }
