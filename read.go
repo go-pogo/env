@@ -8,43 +8,40 @@ import (
 	"github.com/go-pogo/errors"
 	"io"
 	"io/fs"
-	"strings"
 )
 
-type Reader interface {
-	Lookupper
+type AllReader interface {
 	ReadAll() (Map, error)
 }
 
-// Deprecated: use Reader interface instead.
-type LookupMapper = Reader
+var (
+	_ Lookupper = new(Reader)
+	_ AllReader = new(Reader)
+)
 
-var _ Reader = new(reader)
-
-type reader struct {
+type Reader struct {
 	scanner *Scanner
 	found   Map
 }
 
+// reader prevents FileReader from needing to have a public *Reader
+type reader = Reader
+
 type FileReader struct {
-	Reader
+	*reader
 	file fs.File
 }
 
-func NewReader(r io.Reader) Reader {
-	return &reader{
+func NewReader(r io.Reader) *Reader {
+	return &Reader{
 		scanner: NewScanner(r),
 		found:   make(Map, 4),
 	}
 }
 
-func NewStringReader(str string) Reader {
-	return NewReader(strings.NewReader(str))
-}
-
 func NewFileReader(f fs.File) *FileReader {
 	return &FileReader{
-		Reader: NewReader(f),
+		reader: NewReader(f),
 		file:   f,
 	}
 }
@@ -73,7 +70,7 @@ func (f *FileReader) Close() error { return f.file.Close() }
 // Lookup continues reading and scanning the internal io.Reader until either
 // EOF is reached or key is found. It will return the found value, ErrNotFound
 // if not found, or an error if any has occurred while scanning.
-func (r *reader) Lookup(key string) (Value, error) {
+func (r *Reader) Lookup(key string) (Value, error) {
 	if v, ok := r.found[key]; ok {
 		return v, nil
 	}
@@ -88,7 +85,7 @@ func (r *reader) Lookup(key string) (Value, error) {
 // ReadAll continues reading and scanning the internal io.Reader and returns a
 // Map of all found environment variables when either EOF is reached or an
 // error has occurred.
-func (r *reader) ReadAll() (Map, error) {
+func (r *Reader) ReadAll() (Map, error) {
 	if _, _, err := r.scan(""); err != nil {
 		return nil, err
 	}
@@ -99,7 +96,7 @@ func (r *reader) ReadAll() (Map, error) {
 // scan continues scanning the internal io.Reader until either EOF is reached or
 // lookup is found. It will return the found value, a boolean indicating if the
 // lookup was found and an error if any.
-func (r *reader) scan(lookup string) (Value, bool, error) {
+func (r *Reader) scan(lookup string) (Value, bool, error) {
 	for r.scanner.Scan() {
 		if err := r.scanner.Err(); err != nil {
 			return "", false, err
