@@ -14,12 +14,18 @@ import (
 
 const ErrNoFilesLoaded = "no files loaded"
 
-var _ env.Reader = new(Reader)
+var (
+	_ env.Lookupper = new(Reader)
+	_ env.AllReader = new(Reader)
+)
 
 type Reader struct {
 	fsys  fs.FS
 	files []*file
 	found env.Map
+
+	// ReplaceVars
+	ReplaceVars bool
 }
 
 type file struct {
@@ -74,6 +80,8 @@ func (er *Reader) init(fsys fs.FS) {
 		{name: ".env"},
 		{name: ".env.local"},
 	}
+
+	er.ReplaceVars = true
 }
 
 func (er *Reader) reader(f *file) (*env.FileReader, error) {
