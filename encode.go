@@ -19,10 +19,22 @@ import (
 
 const ErrStructExpected errors.Msg = "expected a struct type"
 
+// Marshaler is the interface implemented by types that can marshal themselves
+// into valid env values.
 type Marshaler interface {
 	MarshalEnv() ([]byte, error)
 }
 
+// Marshal returns v encoded in env format.
+func Marshal(v interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	if err := NewEncoder(&buf).Encode(v); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// An Encoder writes env values to an output stream.
 type Encoder struct {
 	envtag.Options
 
