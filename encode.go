@@ -5,6 +5,7 @@
 package env
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/go-pogo/env/envtag"
 	"github.com/go-pogo/errors"
@@ -16,9 +17,7 @@ import (
 	"strings"
 )
 
-const (
-	ErrStructExpected errors.Msg = "expected a struct type"
-)
+const ErrStructExpected errors.Msg = "expected a struct type"
 
 type Marshaler interface {
 	MarshalEnv() ([]byte, error)
@@ -26,7 +25,8 @@ type Marshaler interface {
 
 type Encoder struct {
 	envtag.Options
-	traverser
+
+	t traverser
 	w writing.StringWriter
 
 	// TakeValues takes the values from the struct field.
@@ -37,12 +37,31 @@ type Encoder struct {
 
 // NewEncoder returns a new encoder that writes to w.
 func NewEncoder(w io.Writer) *Encoder {
-	e := &Encoder{
-		w: writing.ToStringWriter(w),
+	var e Encoder
+	e.init(w)
+	return &e
+}
+
+func (e *Encoder) init(w io.Writer) {
+	e.WithOptions(envtag.DefaultOptions())
+	e.t.handleField = e.encodeField
+	e.w = writing.ToStringWriter(w)
+}
+
+func (e *Encoder) WithOptions(opts envtag.Options) *Encoder {
+	e.Options = opts
+	e.t.Options = &e.Options
+	return e
+}
+
+func (e *Encoder) WithWriter(w io.Writer) *Encoder {
+	if e.t.Options == nil {
+		// Encoder was never initialized
+		e.init(w)
+		return e
 	}
-	e.Options.Defaults()
-	e.traverser.Options = &e.Options
-	e.traverser.HandleField = e.encodeField
+
+	e.w = writing.ToStringWriter(w)
 	return e
 }
 
@@ -77,14 +96,14 @@ func (e *Encoder) Encode(v interface{}) error {
 		if underlyingKind(rv.Type()) != reflect.Struct {
 			return errors.New(ErrStructExpected)
 		}
-		return e.traverser.traverse(rv, "")
+		return e.t.traverse(rv, "")
 	}
 }
 
 func (e *Encoder) encodeField(rv reflect.Value, tag envtag.Tag) error {
 	val := tag.Default
 	if e.TakeValues {
-		if v, err := encodeValue(rv, tag); err != nil {
+		if v, err := encodeValue(rv); err != nil {
 			return err
 		} else if v != "" {
 			val = v
@@ -131,7 +150,7 @@ func quote(str string) string {
 	return quot + str + quot
 }
 
-func encodeValue(rv reflect.Value, tag envtag.Tag) (string, error) {
+func encodeValue(rv reflect.Value) (string, error) {
 	for rv.Kind() == reflect.Ptr {
 		// todo: check of rv Marshaler of encoding.TextMarshaler implement
 		rv = rv.Elem()

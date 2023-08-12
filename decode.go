@@ -44,7 +44,9 @@ var _ Lookupper = new(Decoder)
 type Decoder struct {
 	envtag.Options
 	Lookupper
-	traverser
+
+	t traverser
+	r *Replacer
 
 	// ReplaceVars
 	ReplaceVars bool
@@ -61,7 +63,7 @@ func NewDecoder(src ...Lookupper) *Decoder {
 }
 
 // NewReaderDecoder returns a new Decoder similar to calling NewDecoder with
-// NewReader. It looks up environment variables from the new Reader.
+// NewReader.
 func NewReaderDecoder(r io.Reader) *Decoder {
 	var d Decoder
 	d.init(NewReader(r))
@@ -69,11 +71,28 @@ func NewReaderDecoder(r io.Reader) *Decoder {
 }
 
 func (d *Decoder) init(l Lookupper) {
+	d.WithOptions(envtag.DefaultOptions())
 	d.Lookupper = l
-	d.ReplaceVars = true
-	d.Options.Defaults()
-	d.traverser.Options = &d.Options
-	d.traverser.HandleField = d.decodeField
+	d.t.handleField = d.decodeField
+}
+
+func (d *Decoder) WithOptions(opts envtag.Options) *Decoder {
+	d.Options = opts
+	d.t.Options = &d.Options
+	return d
+}
+
+// WithLookupper changes the Decoder's internal Lookupper to l.
+func (d *Decoder) WithLookupper(l Lookupper) *Decoder {
+	if d.t.Options == nil {
+		// Decoder was never initialized
+		d.init(l)
+		return d
+	}
+
+	d.Lookupper = l
+	d.r = nil
+	return d
 }
 
 func (d *Decoder) Decode(v interface{}) error {
@@ -85,7 +104,7 @@ func (d *Decoder) Decode(v interface{}) error {
 		return errors.New(ErrStructPointerExpected)
 	}
 
-	return d.traverser.traverse(rv, "")
+	return d.t.traverse(rv, "")
 }
 
 func (d *Decoder) decodeField(rv reflect.Value, tag envtag.Tag) error {
@@ -107,7 +126,8 @@ func (d *Decoder) Lookup(key string) (Value, error) {
 	if !d.ReplaceVars {
 		return d.Lookupper.Lookup(key)
 	}
-
-	// todo: check + replace vars in value
-	return d.Lookupper.Lookup(key)
+	if d.r == nil {
+		d.r = NewReplacer(d.Lookupper)
+	}
+	return d.r.Lookup(key)
 }

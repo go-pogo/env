@@ -7,6 +7,7 @@ package env
 import (
 	"github.com/stretchr/testify/assert"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -46,8 +47,8 @@ func TestDecoder_Decode(t *testing.T) {
 	}
 
 	tests := map[string]struct {
+		dec     Decoder
 		input   string
-		opts    Decoder
 		want    interface{}
 		wantErr error
 	}{
@@ -62,8 +63,8 @@ func TestDecoder_Decode(t *testing.T) {
 			wantErr: nil,
 		},
 		"basic with TagsOnly": {
+			dec:     Decoder{ReplaceVars: true},
 			input:   "CUSTOM_NAME=bar\nIGNORE=true",
-			opts:    Decoder{ReplaceVars: true},
 			want:    &fixtureBasic3{Foo: "bar"},
 			wantErr: nil,
 		},
@@ -101,9 +102,8 @@ INLINE_FOO=not used`,
 		t.Run(name, func(t *testing.T) {
 			have := reflect.New(reflect.ValueOf(tc.want).Elem().Type()).Interface()
 
-			dec := NewDecoder(NewStringReader(tc.input))
-			dec.TagsOnly = tc.opts.TagsOnly
-			haveErr := dec.Decode(have)
+			tc.dec.WithLookupper(NewReader(strings.NewReader(tc.input)))
+			haveErr := tc.dec.Decode(have)
 
 			if tc.wantErr == nil {
 				assert.NoError(t, haveErr)
@@ -113,4 +113,15 @@ INLINE_FOO=not used`,
 			assert.Exactly(t, tc.want, have)
 		})
 	}
+
+	t.Run("nil", func(t *testing.T) {
+		assert.ErrorIs(t, NewDecoder(EnvironLookup()).Decode(nil), ErrStructPointerExpected)
+	})
+	t.Run("non-pointer", func(t *testing.T) {
+		assert.ErrorIs(t, NewDecoder(EnvironLookup()).Decode(fixtureBasic{}), ErrStructPointerExpected)
+	})
+	t.Run("non-struct pointer", func(t *testing.T) {
+		var v int
+		assert.ErrorIs(t, NewDecoder(EnvironLookup()).Decode(&v), ErrStructPointerExpected)
+	})
 }

@@ -9,9 +9,11 @@ import (
 	"reflect"
 )
 
+type fieldHandler func(rv reflect.Value, tag envtag.Tag) error
+
 type traverser struct {
 	*envtag.Options
-	HandleField func(rv reflect.Value, tag envtag.Tag) error
+	handleField fieldHandler
 }
 
 const panicPtr = "ptr values should always be resolved; this is a bug!"
@@ -39,13 +41,15 @@ func (t *traverser) traverse(pv reflect.Value, prefix string) error {
 		switch kind {
 		case reflect.Struct:
 			if unmarshaler.Func(rv.Type()) == nil {
+				// struct is not a known type, continue traversing...
 				p := prefix
 				if !tag.Inline {
 					p = prefixAppend(prefix, tag.Name)
 				}
-				// struct is not a known type, continue traversing
 				if err := t.traverse(rv, p); err != nil {
 					return err
+				} else {
+					continue
 				}
 			}
 		case reflect.Array:
@@ -56,7 +60,7 @@ func (t *traverser) traverse(pv reflect.Value, prefix string) error {
 		if !tag.NoPrefix {
 			tag.Name = prefixAppend(prefix, tag.Name)
 		}
-		if err := t.HandleField(rv, tag); err != nil {
+		if err := t.handleField(rv, tag); err != nil {
 			return err
 		}
 	}

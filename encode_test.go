@@ -13,6 +13,16 @@ import (
 )
 
 func TestEncoder(t *testing.T) {
+	type fixtureBasic struct {
+		Foo        string `env:"FOO" default:"bar"`
+		unexported bool   `env:"NOPE"`
+	}
+
+	type fixtureNested struct {
+		Qux    string
+		Nested fixtureBasic
+	}
+
 	tests := map[string]struct {
 		input interface{}
 		want  []string
@@ -56,12 +66,16 @@ func TestEncoder(t *testing.T) {
 			},
 		},
 		"struct": {
-			input: struct {
-				Foo        string `env:"FOO" default:"bar"`
-				unexported bool   `env:"NOPE"`
-			}{Foo: "foobar"},
+			input: fixtureBasic{Foo: "foobar"},
 			want: []string{
 				`FOO=bar`,
+			},
+		},
+		"nested struct": {
+			input: fixtureNested{Qux: "x00"},
+			want: []string{
+				`QUX=`,
+				`NESTED_FOO=bar`,
 			},
 		},
 	}
