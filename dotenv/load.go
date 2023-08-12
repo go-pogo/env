@@ -31,8 +31,10 @@ func readAndLoad(r *Reader, overload bool) error {
 	if err != nil {
 		return err
 	}
+	if m, err = env.ReplaceAll(m); err != nil {
+		return err
+	}
 
-	m = env.ReplaceVars(m)
 	if overload {
 		return m.Overload()
 	} else {
