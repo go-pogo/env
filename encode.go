@@ -37,8 +37,6 @@ func Marshal(v interface{}) ([]byte, error) {
 // An Encoder writes env values to an output stream.
 type Encoder struct {
 	envtag.Options
-
-	t traverser
 	w writing.StringWriter
 
 	// TakeValues takes the values from the struct field.
@@ -49,30 +47,18 @@ type Encoder struct {
 
 // NewEncoder returns a new encoder that writes to w.
 func NewEncoder(w io.Writer) *Encoder {
-	var e Encoder
-	e.init(w)
-	return &e
-}
-
-func (e *Encoder) init(w io.Writer) {
-	e.WithOptions(envtag.DefaultOptions())
-	e.t.handleField = e.encodeField
-	e.w = writing.ToStringWriter(w)
+	return &Encoder{
+		Options: envtag.DefaultOptions(),
+		w:       writing.ToStringWriter(w),
+	}
 }
 
 func (e *Encoder) WithOptions(opts envtag.Options) *Encoder {
 	e.Options = opts
-	e.t.Options = &e.Options
 	return e
 }
 
 func (e *Encoder) WithWriter(w io.Writer) *Encoder {
-	if e.t.Options == nil {
-		// Encoder was never initialized
-		e.init(w)
-		return e
-	}
-
 	e.w = writing.ToStringWriter(w)
 	return e
 }
@@ -108,7 +94,8 @@ func (e *Encoder) Encode(v interface{}) error {
 		if underlyingKind(rv.Type()) != reflect.Struct {
 			return errors.New(ErrStructExpected)
 		}
-		return e.t.traverse(rv, "")
+
+		return newTraverser(e.Options, e.encodeField).start(rv)
 	}
 }
 

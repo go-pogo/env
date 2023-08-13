@@ -12,13 +12,24 @@ import (
 type fieldHandler func(rv reflect.Value, tag envtag.Tag) error
 
 type traverser struct {
-	*envtag.Options
+	envtag.Options
 	handleField fieldHandler
 }
 
-const panicPtr = "ptr values should always be resolved; this is a bug!"
+func newTraverser(opts envtag.Options, handleField fieldHandler) *traverser {
+	return &traverser{
+		Options:     opts,
+		handleField: handleField,
+	}
+}
 
-func (t *traverser) traverse(pv reflect.Value, prefix string) error {
+func (t *traverser) start(pv reflect.Value) error {
+	return t.traverse(pv, "", false)
+}
+
+const panicPtr = "env: ptr values should always be resolved; this is a bug!"
+
+func (t *traverser) traverse(pv reflect.Value, prefix string, include bool) error {
 	// todo: dit moet anders, in het geval van encode zou pv.Interface() wss. prima nil kunnen zijn
 	pv = indirect(pv)
 
@@ -33,7 +44,10 @@ func (t *traverser) traverse(pv reflect.Value, prefix string) error {
 			panic(panicPtr)
 		}
 
-		tag, _ := envtag.ParseStructField(*t.Options, field)
+		opts := t.Options
+		opts.StrictTags = opts.StrictTags && !include
+
+		tag, _ := envtag.ParseStructField(opts, field)
 		if tag.ShouldIgnore() {
 			continue
 		}
@@ -41,12 +55,17 @@ func (t *traverser) traverse(pv reflect.Value, prefix string) error {
 		switch kind {
 		case reflect.Struct:
 			if unmarshaler.Func(rv.Type()) == nil {
-				// struct is not a known type, continue traversing...
 				p := prefix
-				if !tag.Inline {
+				if tag.NoPrefix {
+					// ignore prefix
+					p = tag.Name
+				} else if !tag.Inline {
+					// append tag name to prefix
 					p = prefixAppend(prefix, tag.Name)
 				}
-				if err := t.traverse(rv, p); err != nil {
+
+				// struct is not a known type, continue traversing...
+				if err := t.traverse(rv, p, include || tag.Include); err != nil {
 					return err
 				} else {
 					continue

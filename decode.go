@@ -44,8 +44,6 @@ var _ Lookupper = new(Decoder)
 type Decoder struct {
 	envtag.Options
 	Lookupper
-
-	t traverser
 	r *Replacer
 
 	// ReplaceVars
@@ -57,45 +55,40 @@ type Decoder struct {
 //
 //	dec := NewDecoder(NewReader(r))
 func NewDecoder(src ...Lookupper) *Decoder {
-	var d Decoder
-	d.init(Chain(src...))
-	return &d
+	return &Decoder{
+		Options:   envtag.DefaultOptions(),
+		Lookupper: Chain(src...),
+	}
 }
 
 // NewReaderDecoder returns a new Decoder similar to calling NewDecoder with
 // NewReader.
 func NewReaderDecoder(r io.Reader) *Decoder {
-	var d Decoder
-	d.init(NewReader(r))
-	return &d
-}
-
-func (d *Decoder) init(l Lookupper) {
-	d.WithOptions(envtag.DefaultOptions())
-	d.Lookupper = l
-	d.t.handleField = d.decodeField
-}
-
-func (d *Decoder) WithOptions(opts envtag.Options) *Decoder {
-	d.Options = opts
-	d.t.Options = &d.Options
-	return d
+	return &Decoder{
+		Options:   envtag.DefaultOptions(),
+		Lookupper: NewReader(r),
+	}
 }
 
 // WithLookupper changes the Decoder's internal Lookupper to l.
 func (d *Decoder) WithLookupper(l Lookupper) *Decoder {
-	if d.t.Options == nil {
-		// Decoder was never initialized
-		d.init(l)
-		return d
-	}
-
 	d.Lookupper = l
 	d.r = nil
 	return d
 }
 
+func (d *Decoder) WithOptions(opts envtag.Options) *Decoder {
+	d.Options = opts
+	return d
+}
+
+const panicNilLookupper = "env.Decoder: Lookupper must not be nil"
+
 func (d *Decoder) Decode(v interface{}) error {
+	if d.Lookupper == nil {
+		panic(panicNilLookupper)
+	}
+
 	rv := reflect.ValueOf(v)
 	if rv.Kind() != reflect.Ptr || rv.IsNil() {
 		return errors.New(ErrStructPointerExpected)
@@ -104,7 +97,7 @@ func (d *Decoder) Decode(v interface{}) error {
 		return errors.New(ErrStructPointerExpected)
 	}
 
-	return d.t.traverse(rv, "")
+	return newTraverser(d.Options, d.decodeField).start(rv)
 }
 
 func (d *Decoder) decodeField(rv reflect.Value, tag envtag.Tag) error {
@@ -123,6 +116,9 @@ func (d *Decoder) decodeField(rv reflect.Value, tag envtag.Tag) error {
 }
 
 func (d *Decoder) Lookup(key string) (Value, error) {
+	if d.Lookupper == nil {
+		panic(panicNilLookupper)
+	}
 	if !d.ReplaceVars {
 		return d.Lookupper.Lookup(key)
 	}

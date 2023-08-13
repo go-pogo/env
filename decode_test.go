@@ -42,31 +42,47 @@ func TestDecoder_Decode(t *testing.T) {
 		Inline fixtureBasic2 `env:",inline"`
 	}
 
+	type fixtureInclude struct {
+		IgnoreMe bool
+		Included fixtureBasic2 `env:",include"`
+	}
+
+	type fixtureInlineInclude struct {
+		IgnoreMe bool
+		Included fixtureBasic2 `env:",inline,include"`
+	}
+
 	type fixtureNoPrefix struct {
 		DeepNested fixtureNested2 `env:"DEEPNESTED"`
 	}
 
 	tests := map[string]struct {
-		dec     Decoder
+		setup   func(dec *Decoder)
 		input   string
 		want    interface{}
 		wantErr error
 	}{
 		"basic": {
-			input:   "FOO=bar\nIGNORE=true",
-			want:    &fixtureBasic{Foo: "bar", Ignore: true},
-			wantErr: nil,
+			input: "FOO=bar\nIGNORE=true",
+			want:  &fixtureBasic{Foo: "bar", Ignore: true},
+		},
+		"basic strict": {
+			setup: func(dec *Decoder) {
+				dec.StrictTags = true
+			},
+			input: "FOO=bar\nIGNORE=true",
+			want:  &fixtureBasic{},
 		},
 		"basic with ignored field": {
-			input:   "FOO=bar\nIGNORE=true",
-			want:    &fixtureBasic2{Foo: "bar"},
-			wantErr: nil,
+			input: "FOO=bar\nIGNORE=true",
+			want:  &fixtureBasic2{Foo: "bar"},
 		},
-		"basic with TagsOnly": {
-			dec:     Decoder{ReplaceVars: true},
-			input:   "CUSTOM_NAME=bar\nIGNORE=true",
-			want:    &fixtureBasic3{Foo: "bar"},
-			wantErr: nil,
+		"basic with StrictTags": {
+			setup: func(dec *Decoder) {
+				dec.StrictTags = true
+			},
+			input: "CUSTOM_NAME=bar\nIGNORE=true",
+			want:  &fixtureBasic3{Foo: "bar"},
 		},
 		"nested": {
 			input: "QUX=x00\nNESTED_FOO=bar",
@@ -85,7 +101,29 @@ INLINE_FOO=not used`,
 				},
 			},
 		},
-		"noPrefix": {
+		"include": {
+			setup: func(dec *Decoder) {
+				dec.StrictTags = true
+			},
+			input: "IGNORE_ME=true\nINCLUDED_FOO=bar",
+			want: &fixtureInclude{
+				Included: fixtureBasic2{
+					Foo: "bar",
+				},
+			},
+		},
+		"inline,include": {
+			setup: func(dec *Decoder) {
+				dec.StrictTags = true
+			},
+			input: "FOO=bar",
+			want: &fixtureInlineInclude{
+				Included: fixtureBasic2{
+					Foo: "bar",
+				},
+			},
+		},
+		"noprefix": {
 			input: "CUSTOM_NAME=bar\nDEEPNESTED_QUX=xoo",
 			want: &fixtureNoPrefix{
 				DeepNested: fixtureNested2{
@@ -100,10 +138,13 @@ INLINE_FOO=not used`,
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			have := reflect.New(reflect.ValueOf(tc.want).Elem().Type()).Interface()
+			dec := NewDecoder(NewReader(strings.NewReader(tc.input)))
+			if tc.setup != nil {
+				tc.setup(dec)
+			}
 
-			tc.dec.WithLookupper(NewReader(strings.NewReader(tc.input)))
-			haveErr := tc.dec.Decode(have)
+			have := reflect.New(reflect.ValueOf(tc.want).Elem().Type()).Interface()
+			haveErr := dec.Decode(have)
 
 			if tc.wantErr == nil {
 				assert.NoError(t, haveErr)
