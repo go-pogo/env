@@ -119,7 +119,7 @@ func TestParseStructField(t *testing.T) {
 
 	t.Run("panic", func(t *testing.T) {
 		assert.PanicsWithValue(t, panicNormalizerEmptyName, func() {
-			ParseStructField(
+			_, _ = ParseStructField(
 				Options{
 					Normalizer: NormalizerFunc(func(str string) string {
 						return ""
