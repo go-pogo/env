@@ -15,7 +15,7 @@ import (
 func TestEncoder(t *testing.T) {
 	type fixtureBasic struct {
 		Foo        string `env:"FOO" default:"bar"`
-		unexported bool   `env:"NOPE"`
+		unexported bool   `env:"NOPE"` //nolint:golint,unused
 	}
 
 	type fixtureNested struct {
