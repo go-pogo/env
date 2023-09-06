@@ -35,6 +35,9 @@ type Unmarshaler interface {
 	UnmarshalEnv([]byte) error
 }
 
+// Unmarshal parses the env formatted data and stores the result in the value
+// pointed to by v. If v is nil or not a pointer, Unmarshal returns an
+// ErrStructPointerExpected error.
 func Unmarshal(data []byte, v interface{}) error {
 	return NewDecoder(NewReader(bytes.NewReader(data))).Decode(v)
 }

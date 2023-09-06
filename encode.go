@@ -12,6 +12,7 @@ import (
 	"github.com/go-pogo/parseval"
 	"github.com/go-pogo/writing"
 	"io"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -77,6 +78,13 @@ func (e *Encoder) WithWriter(w io.Writer) *Encoder {
 	return e
 }
 
+// Encode writes the env format encoding of v to the underlying io.Writer.
+// Supported types of v are:
+//   - Map
+//   - map[string]Value
+//   - []NamedValue
+//   - []envtag.Tag
+//   - any valid struct type
 func (e *Encoder) Encode(v interface{}) error {
 	switch src := v.(type) {
 	case Map:
