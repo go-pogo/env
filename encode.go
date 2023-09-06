@@ -34,6 +34,20 @@ func Marshal(v interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func Write(filename string, v interface{}) (err error) {
+	f, err := os.Create(filename)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	defer errors.AppendFunc(&err, f.Close)
+	if err = NewEncoder(f).Encode(v); err != nil {
+		err = errors.WithStack(err)
+		return
+	}
+	return
+}
+
 // An Encoder writes env values to an output stream.
 type Encoder struct {
 	envtag.Options
