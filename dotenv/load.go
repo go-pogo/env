@@ -9,19 +9,19 @@ import (
 	"io/fs"
 )
 
-func Load(dir string, ae Environment) error {
+func Load(dir string, ae ActiveEnvironment) error {
 	return readAndLoad(Read(dir, ae), false)
 }
 
-func Overload(dir string, ae Environment) error {
+func Overload(dir string, ae ActiveEnvironment) error {
 	return readAndLoad(Read(dir, ae), true)
 }
 
-func LoadFS(fsys fs.FS, ae Environment) error {
+func LoadFS(fsys fs.FS, ae ActiveEnvironment) error {
 	return readAndLoad(ReadFS(fsys, ae), false)
 }
 
-func OverloadFS(fsys fs.FS, ae Environment) error {
+func OverloadFS(fsys fs.FS, ae ActiveEnvironment) error {
 	return readAndLoad(ReadFS(fsys, ae), true)
 }
 

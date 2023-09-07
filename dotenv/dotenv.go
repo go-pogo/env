@@ -4,13 +4,18 @@
 
 package dotenv
 
-type Environment string
+// ActiveEnvironment is the active environment.
+type ActiveEnvironment string
 
-func (e Environment) String() string { return string(e) }
+func (ae ActiveEnvironment) FileName() string {
+	return ".env." + ae.String()
+}
+
+func (ae ActiveEnvironment) String() string { return string(ae) }
 
 const (
-	None        Environment = ""
-	Development Environment = "dev"
-	Testing     Environment = "test"
-	Production  Environment = "prod"
+	None        ActiveEnvironment = ""
+	Development ActiveEnvironment = "dev"
+	Testing     ActiveEnvironment = "test"
+	Production  ActiveEnvironment = "prod"
 )

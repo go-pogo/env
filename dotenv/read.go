@@ -34,7 +34,11 @@ type file struct {
 	notExists bool
 }
 
-func Read(dir string, ae Environment) *Reader {
+// Read reads .env files from dir depending on the provided ActiveEnvironment.
+//
+//	var cfg MyConfig
+//	env.NewDecoder(dotenv.Read("./", dotenv.Development)).Decode(&cfg)
+func Read(dir string, ae ActiveEnvironment) *Reader {
 	var fsys fs.FS
 	if dir != "" {
 		fsys = os.DirFS(dir)
@@ -43,53 +47,48 @@ func Read(dir string, ae Environment) *Reader {
 	return ReadFS(fsys, ae)
 }
 
-func ReadFS(fsys fs.FS, ae Environment) *Reader {
-	var er Reader
-	er.init(fsys)
+// ReadFS reads .env files from fsys.
+func ReadFS(fsys fs.FS, ae ActiveEnvironment) *Reader {
+	var r Reader
+	r.init(fsys)
 
 	if ae != "" {
-		er.files = append(er.files,
+		r.files = append(r.files,
 			&file{name: ".env." + ae.String()},
 			&file{name: ".env." + ae.String() + ".local"},
 		)
 	}
 
-	return &er
+	return &r
 }
 
 // Deprecated: use ReadFS instead.
-func NewReader(fsys fs.FS, ae Environment) *Reader { return ReadFS(fsys, ae) }
+func NewReader(fsys fs.FS, ae ActiveEnvironment) *Reader { return ReadFS(fsys, ae) }
 
-func (er *Reader) init(fsys fs.FS) {
-	if er.files != nil {
+func (r *Reader) init(fsys fs.FS) {
+	if r.files != nil {
 		return
 	}
 	if fsys == nil {
-		dir, err := os.Getwd()
-		if err != nil {
-			if dir, err = os.Executable(); err == nil {
-				dir = path.Dir(dir)
-			}
-		}
-		fsys = os.DirFS(dir)
+		fsys = os.DirFS(getwd())
 	}
 
-	er.fsys = fsys
-	er.found = make(env.Map, 8)
-	er.files = []*file{
+	r.fsys = fsys
+	r.found = make(env.Map, 8)
+	r.files = []*file{
 		{name: ".env"},
 		{name: ".env.local"},
 	}
 
-	er.ReplaceVars = true
+	r.ReplaceVars = true
 }
 
-func (er *Reader) reader(f *file) (*env.FileReader, error) {
+func (r *Reader) reader(f *file) (*env.FileReader, error) {
 	if f.reader != nil || f.notExists {
 		return f.reader, nil
 	}
 
-	fr, err := env.OpenFS(er.fsys, f.name)
+	fr, err := env.OpenFS(r.fsys, f.name)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			f.notExists = true
@@ -103,24 +102,24 @@ func (er *Reader) reader(f *file) (*env.FileReader, error) {
 	return f.reader, nil
 }
 
-func (er *Reader) Lookup(key string) (env.Value, error) {
-	er.init(nil)
-	if v, ok := er.found[key]; ok {
+func (r *Reader) Lookup(key string) (env.Value, error) {
+	r.init(nil)
+	if v, ok := r.found[key]; ok {
 		return v, nil
 	}
 
 	var anyLoaded bool
-	for i := len(er.files) - 1; i >= 0; i-- {
-		r, err := er.reader(er.files[i])
+	for i := len(r.files) - 1; i >= 0; i-- {
+		fr, err := r.reader(r.files[i])
 		if err != nil {
 			return "", err
 		}
-		if r == nil {
+		if fr == nil {
 			anyLoaded = true
 			continue
 		}
 
-		v, err := r.Lookup(key)
+		v, err := fr.Lookup(key)
 		if env.IsNotFound(err) {
 			continue
 		}
@@ -134,18 +133,18 @@ func (er *Reader) Lookup(key string) (env.Value, error) {
 	return "", errors.New(env.ErrNotFound)
 }
 
-func (er *Reader) ReadAll() (env.Map, error) {
-	er.init(nil)
+func (r *Reader) ReadAll() (env.Map, error) {
+	r.init(nil)
 	var anyLoaded bool
 
 	res := make(env.Map, 8)
-	for _, f := range er.files {
-		r, err := er.reader(f)
+	for _, f := range r.files {
+		fr, err := r.reader(f)
 		if err != nil {
 			return res, err
 		}
 
-		m, err := r.ReadAll()
+		m, err := fr.ReadAll()
 		if err != nil {
 			return nil, err
 		}
@@ -157,17 +156,30 @@ func (er *Reader) ReadAll() (env.Map, error) {
 		return nil, errors.New(ErrNoFilesLoaded)
 	}
 
-	er.found.MergeValues(res)
+	r.found.MergeValues(res)
 	return res, nil
 }
 
-func (er *Reader) Close() error {
+func (r *Reader) Close() error {
 	var err error
-	for _, f := range er.files {
+	for _, f := range r.files {
 		if f.reader != nil {
 			f.notExists = false
 			errors.Append(&err, f.reader.Close())
 		}
 	}
 	return err
+}
+
+// todo: test getwd vs "./"
+func getwd() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		if dir, err = os.Executable(); err == nil {
+			dir = path.Dir(dir)
+		} else {
+			dir = "./"
+		}
+	}
+	return dir
 }
