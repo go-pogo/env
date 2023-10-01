@@ -24,7 +24,8 @@ func TestEncoder(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		input interface{}
+		setup func(enc *Encoder)
+		input any
 		want  []string
 	}{
 		"Map": {

@@ -38,7 +38,7 @@ type Unmarshaler interface {
 // Unmarshal parses the env formatted data and stores the result in the value
 // pointed to by v. If v is nil or not a pointer, Unmarshal returns an
 // ErrStructPointerExpected error.
-func Unmarshal(data []byte, v interface{}) error {
+func Unmarshal(data []byte, v any) error {
 	return NewDecoder(NewReader(bytes.NewReader(data))).Decode(v)
 }
 
@@ -87,7 +87,7 @@ func (d *Decoder) WithOptions(opts envtag.Options) *Decoder {
 
 const panicNilLookupper = "env.Decoder: Lookupper must not be nil"
 
-func (d *Decoder) Decode(v interface{}) error {
+func (d *Decoder) Decode(v any) error {
 	if d.Lookupper == nil {
 		panic(panicNilLookupper)
 	}

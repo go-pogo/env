@@ -59,7 +59,7 @@ func TestDecoder_Decode(t *testing.T) {
 	tests := map[string]struct {
 		setup   func(dec *Decoder)
 		input   string
-		want    interface{}
+		want    any
 		wantErr error
 	}{
 		"basic": {

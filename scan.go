@@ -7,10 +7,9 @@ package env
 import (
 	"bufio"
 	"bytes"
+	"github.com/go-pogo/errors"
 	"io"
 	"unicode"
-
-	"github.com/go-pogo/errors"
 )
 
 type Scanner struct {

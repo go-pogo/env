@@ -27,7 +27,7 @@ type Marshaler interface {
 }
 
 // Marshal returns v encoded in env format.
-func Marshal(v interface{}) ([]byte, error) {
+func Marshal(v any) ([]byte, error) {
 	var buf bytes.Buffer
 	if err := NewEncoder(&buf).Encode(v); err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func Marshal(v interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func Write(filename string, v interface{}) (err error) {
+func Write(filename string, v any) (err error) {
 	f, err := os.Create(filename)
 	if err != nil {
 		return errors.WithStack(err)
@@ -85,7 +85,7 @@ func (e *Encoder) WithWriter(w io.Writer) *Encoder {
 //   - []NamedValue
 //   - []envtag.Tag
 //   - any valid struct type
-func (e *Encoder) Encode(v interface{}) error {
+func (e *Encoder) Encode(v any) error {
 	switch src := v.(type) {
 	case Map:
 		for key, val := range src {

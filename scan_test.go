@@ -1,13 +1,13 @@
 // Copyright (c) 2022, Roel Schut. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
+
 package env
 
 import (
+	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNewScanner(t *testing.T) {

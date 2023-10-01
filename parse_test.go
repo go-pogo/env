@@ -5,10 +5,9 @@
 package env
 
 import (
-	"testing"
-
 	"github.com/go-pogo/errors"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestParse(t *testing.T) {

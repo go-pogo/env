@@ -12,7 +12,7 @@ import (
 
 func TestUnderlyingKind(t *testing.T) {
 	tests := map[string]struct {
-		value    interface{}
+		value    any
 		wantKind reflect.Kind
 	}{
 		"string": {
