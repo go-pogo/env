@@ -6,21 +6,43 @@ package env
 
 import (
 	"github.com/go-pogo/env/envtag"
+	"github.com/go-pogo/rawconv"
 	"reflect"
 )
 
-type fieldHandler func(rv reflect.Value, tag envtag.Tag) error
+func init() {
+	unmarshaler.Register(
+		reflect.TypeOf((*Unmarshaler)(nil)).Elem(),
+		func(val rawconv.Value, dest any) error {
+			return dest.(Unmarshaler).UnmarshalEnv(val.Bytes())
+		},
+	)
+
+	marshaler.Register(
+		reflect.TypeOf((*Marshaler)(nil)).Elem(),
+		func(v any) (string, error) {
+			b, err := v.(Marshaler).MarshalEnv()
+			if err != nil {
+				return "", err
+			}
+			return string(b), err
+		},
+	)
+}
+
+func typeKnownByUnmarshaler(typ reflect.Type) bool {
+	return unmarshaler.Func(typ) != nil
+}
+
+func typeKnownByMarshaler(typ reflect.Type) bool {
+	return marshaler.Func(typ) != nil
+}
 
 type traverser struct {
 	envtag.Options
-	handleField fieldHandler
-}
 
-func newTraverser(opts envtag.Options, handleField fieldHandler) *traverser {
-	return &traverser{
-		Options:     opts,
-		handleField: handleField,
-	}
+	isTypeKnown func(reflect.Type) bool
+	handleField func(reflect.Value, envtag.Tag) error
 }
 
 func (t *traverser) start(pv reflect.Value) error {
@@ -34,7 +56,7 @@ func (t *traverser) traverse(pv reflect.Value, prefix string, include bool) erro
 	pv = indirect(pv)
 
 	pt := pv.Type()
-	for i := 0; i < pv.NumField(); i++ {
+	for i, l := 0, pv.NumField(); i < l; i++ {
 		field, rv := pt.Field(i), pv.Field(i)
 		kind := underlyingKind(field.Type)
 		if kind == reflect.Invalid || kind == reflect.Uintptr || kind == reflect.Chan || kind == reflect.Func || kind == reflect.UnsafePointer {
@@ -52,28 +74,22 @@ func (t *traverser) traverse(pv reflect.Value, prefix string, include bool) erro
 			continue
 		}
 
-		switch kind {
-		case reflect.Struct:
-			if unmarshaler.Func(rv.Type()) == nil {
-				p := prefix
-				if tag.NoPrefix {
-					// ignore prefix
-					p = tag.Name
-				} else if !tag.Inline {
-					// append tag name to prefix
-					p = prefixAppend(prefix, tag.Name)
-				}
-
-				// struct is not a known type, continue traversing...
-				if err := t.traverse(rv, p, include || tag.Include); err != nil {
-					return err
-				} else {
-					continue
-				}
+		if kind == reflect.Struct && !t.isTypeKnown(rv.Type()) {
+			p := prefix
+			if tag.NoPrefix {
+				// ignore prefix
+				p = tag.Name
+			} else if !tag.Inline && !field.Anonymous {
+				// append tag name to prefix
+				p = prefixAppend(prefix, tag.Name)
 			}
-		case reflect.Array:
-		case reflect.Slice:
-		case reflect.Map:
+
+			if err := t.traverse(rv, p, include || tag.Include); err != nil {
+				return err
+			} else {
+				// no error, continue to next field
+				continue
+			}
 		}
 
 		if !tag.NoPrefix {

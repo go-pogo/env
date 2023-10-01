@@ -16,7 +16,7 @@ const ErrNoFilesLoaded = "no files loaded"
 
 var (
 	_ env.Lookupper = new(Reader)
-	_ env.AllReader = new(Reader)
+	_ env.ReadAller = new(Reader)
 )
 
 type Reader struct {
@@ -37,7 +37,7 @@ type file struct {
 // Read reads .env files from dir depending on the provided ActiveEnvironment.
 //
 //	var cfg MyConfig
-//	env.NewDecoder(dotenv.Read("./", dotenv.Development)).Decode(&cfg)
+//	env.NewDecoder(dotenv.ReadAll("./", dotenv.Development)).Decode(&cfg)
 func Read(dir string, ae ActiveEnvironment) *Reader {
 	var fsys fs.FS
 	if dir != "" {

@@ -10,13 +10,13 @@ import (
 	"io/fs"
 )
 
-type AllReader interface {
+type ReadAller interface {
 	ReadAll() (Map, error)
 }
 
 var (
 	_ Lookupper = new(Reader)
-	_ AllReader = new(Reader)
+	_ ReadAller = new(Reader)
 )
 
 type Reader struct {

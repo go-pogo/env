@@ -44,3 +44,26 @@ IP=192.168.1.1`
 	//  Ip: (net.IP) (len=16 cap=16) 192.168.1.1
 	// }
 }
+
+func ExampleMarshal() {
+	type Envs struct {
+		Foo string
+		Bar struct {
+			Url url.URL `default:"https://example.com"`
+		} `env:",inline"`
+		Timeout time.Duration `default:"10s"`
+		Ip      net.IP
+	}
+
+	b, err := Marshal(Envs{})
+	if err != nil {
+		panic(fmt.Sprintf("%+v", err))
+	}
+
+	fmt.Println(string(b))
+	// Output:
+	// FOO=
+	// URL=https://example.com
+	// TIMEOUT=10s
+	// IP=
+}

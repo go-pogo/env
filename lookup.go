@@ -4,7 +4,9 @@
 
 package env
 
-import "github.com/go-pogo/errors"
+import (
+	"github.com/go-pogo/errors"
+)
 
 // ErrNotFound is returned when a Lookup call cannot find a matching key.
 const ErrNotFound errors.Msg = "not found"

@@ -8,8 +8,12 @@ import (
 	"bytes"
 	"github.com/go-pogo/env/envtag"
 	"github.com/stretchr/testify/assert"
+	"math"
+	"net/url"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestEncoder(t *testing.T) {
@@ -39,13 +43,16 @@ func TestEncoder(t *testing.T) {
 			},
 		},
 		"map": {
+			setup: func(enc *Encoder) {
+				enc.ExportPrefix = true
+			},
 			input: map[string]Value{
 				`foo`: `${bar}`,
 				`qux`: `"xoo"`,
 			},
 			want: []string{
-				`foo=${bar}`,
-				`qux='"xoo"'`,
+				`export foo=${bar}`,
+				`export qux='"xoo"'`,
 			},
 		},
 		"NamedValues": {
@@ -82,44 +89,87 @@ func TestEncoder(t *testing.T) {
 	}
 
 	for name, tc := range tests {
-		t.Run("default", func(t *testing.T) {
-			t.Run(name, func(t *testing.T) {
-				var buf bytes.Buffer
-				enc := NewEncoder(&buf)
+		t.Run(name, func(t *testing.T) {
+			var buf bytes.Buffer
+			enc := NewEncoder(&buf)
+			if tc.setup != nil {
+				tc.setup(enc)
+			}
 
-				assert.NoError(t, enc.Encode(tc.input))
-				assertSimilarOutput(t, buf.String(), tc.want, "")
-			})
-		})
-		t.Run("ExportPrefix", func(t *testing.T) {
-			t.Run(name, func(t *testing.T) {
-				var buf bytes.Buffer
-				enc := NewEncoder(&buf)
-				enc.ExportPrefix = true
-
-				assert.NoError(t, enc.Encode(tc.input))
-				assertSimilarOutput(t, buf.String(), tc.want, "export ")
-			})
+			assert.NoError(t, enc.Encode(tc.input))
+			assertSimilarOutput(t, buf.String(), tc.want)
 		})
 	}
 
-	//t.Run("TakeValues", func(t *testing.T) {
-	//	if tc.wantTakeValues == nil {
-	//		tc.wantTakeValues = tc.want
-	//	}
-	//
-	//	var buf bytes.Buffer
-	//	enc := NewEncoder(&buf)
-	//	enc.TakeValues = true
-	//
-	//	assert.NoError(t, enc.Encode(tc.input))
-	//	assertSimilarOutput(t, buf.String(), tc.wantTakeValues, "")
-	//})
+	typeTests := map[string]struct {
+		exec func(enc *Encoder) error
+		want string
+	}{
+		"bool": {
+			exec: func(enc *Encoder) error {
+				return enc.Encode(struct{ Any bool }{Any: true})
+			},
+			want: "true",
+		},
+		"int": {
+			exec: func(enc *Encoder) error {
+				return enc.Encode(struct{ Any int }{Any: -123})
+			},
+			want: "-123",
+		},
+		"uint": {
+			exec: func(enc *Encoder) error {
+				return enc.Encode(struct{ Any uint }{Any: 123})
+			},
+			want: "123",
+		},
+		"float": {
+			exec: func(enc *Encoder) error {
+				return enc.Encode(struct{ Any float64 }{Any: math.Pi})
+			},
+			want: strconv.FormatFloat(math.Pi, 'g', -1, 64),
+		},
+		"string": {
+			exec: func(enc *Encoder) error {
+				return enc.Encode(struct{ Any string }{Any: "foo"})
+			},
+			want: "foo",
+		},
+		"url": {
+			exec: func(enc *Encoder) error {
+				u, err := url.Parse("https://example.com")
+				if err != nil {
+					panic(err)
+				}
+				return enc.Encode(struct{ Any *url.URL }{Any: u})
+			},
+			want: "https://example.com",
+		},
+		"duration": {
+			exec: func(enc *Encoder) error {
+				return enc.Encode(struct{ Any time.Duration }{Any: time.Second + (time.Minute * 3)})
+			},
+			want: "3m1s",
+		},
+	}
+
+	t.Run("TakeValues", func(t *testing.T) {
+		for name, tc := range typeTests {
+			t.Run(name, func(t *testing.T) {
+				var buf bytes.Buffer
+				enc := NewEncoder(&buf)
+				enc.TakeValues = true
+
+				assert.NoError(t, tc.exec(enc))
+				assert.Equal(t, "ANY="+tc.want+"\n", buf.String())
+			})
+		}
+	})
 }
 
-func assertSimilarOutput(t *testing.T, have string, want []string, prefix string) {
-	assert.Len(t, have, 1+len(strings.Join(want, "\n"))+(len(prefix)*len(want)))
+func assertSimilarOutput(t *testing.T, have string, want []string) {
+	assert.Len(t, have, 1+len(strings.Join(want, "\n")))
 	for _, line := range want {
-		assert.Contains(t, have, prefix+line)
+		assert.Contains(t, have, line)
 	}
 }

@@ -8,25 +8,14 @@ import (
 	"bytes"
 	"github.com/go-pogo/env/envtag"
 	"github.com/go-pogo/errors"
-	"github.com/go-pogo/parseval"
+	"github.com/go-pogo/rawconv"
 	"io"
 	"reflect"
 )
 
-const (
-	ErrStructPointerExpected errors.Msg = "expected a non-nil pointer to a struct"
-)
+const ErrStructPointerExpected errors.Msg = "expected a non-nil pointer to a struct"
 
-var unmarshaler parseval.Unmarshaler
-
-func init() {
-	unmarshaler.Register(
-		reflect.TypeOf((*Unmarshaler)(nil)).Elem(),
-		func(val parseval.Value, dest interface{}) error {
-			return dest.(Unmarshaler).UnmarshalEnv(val.Bytes())
-		},
-	)
-}
+var unmarshaler rawconv.Unmarshaler
 
 // Unmarshaler is the interface implemented by types that can unmarshal a
 // textual representation of themselves.
@@ -100,7 +89,11 @@ func (d *Decoder) Decode(v any) error {
 		return errors.New(ErrStructPointerExpected)
 	}
 
-	return newTraverser(d.Options, d.decodeField).start(rv)
+	return (&traverser{
+		Options:     d.Options,
+		isTypeKnown: typeKnownByUnmarshaler,
+		handleField: d.decodeField,
+	}).start(rv)
 }
 
 func (d *Decoder) decodeField(rv reflect.Value, tag envtag.Tag) error {

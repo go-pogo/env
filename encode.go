@@ -6,19 +6,19 @@ package env
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/go-pogo/env/envtag"
 	"github.com/go-pogo/errors"
-	"github.com/go-pogo/parseval"
+	"github.com/go-pogo/rawconv"
 	"github.com/go-pogo/writing"
 	"io"
 	"os"
 	"reflect"
-	"strconv"
 	"strings"
 )
 
 const ErrStructExpected errors.Msg = "expected a struct type"
+
+var marshaler rawconv.Marshaler
 
 // Marshaler is the interface implemented by types that can marshal themselves
 // into valid env values.
@@ -117,17 +117,21 @@ func (e *Encoder) Encode(v any) error {
 			return errors.New(ErrStructExpected)
 		}
 
-		return newTraverser(e.Options, e.encodeField).start(rv)
+		return (&traverser{
+			Options:     e.Options,
+			isTypeKnown: typeKnownByMarshaler,
+			handleField: e.encodeField,
+		}).start(rv)
 	}
 }
 
 func (e *Encoder) encodeField(rv reflect.Value, tag envtag.Tag) error {
 	val := tag.Default
 	if e.TakeValues {
-		if v, err := encodeValue(rv); err != nil {
+		if v, err := marshaler.Marshal(rv); err != nil {
 			return err
-		} else if v != "" {
-			val = v
+		} else if !v.IsEmpty() {
+			val = quote(v.String())
 		}
 	}
 
@@ -169,44 +173,4 @@ func quote(str string) string {
 	}
 
 	return quot + str + quot
-}
-
-func encodeValue(rv reflect.Value) (string, error) {
-	for rv.Kind() == reflect.Ptr {
-		// todo: check of rv Marshaler of encoding.TextMarshaler implement
-		rv = rv.Elem()
-	}
-
-	switch underlyingKind(rv.Type()) {
-	case reflect.Invalid, reflect.Uintptr, reflect.Array, reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Slice, reflect.UnsafePointer:
-		return "", &parseval.UnsupportedTypeError{Type: rv.Type()}
-	case reflect.Bool:
-		return strconv.FormatBool(rv.Bool()), nil
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return fmtInt(rv.Int()), nil
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return fmtUint(rv.Uint()), nil
-	case reflect.Float32, reflect.Float64:
-		return fmtFloat(rv.Float(), rv.Type().Bits()), nil
-	case reflect.Complex64, reflect.Complex128:
-		return fmtComplex(rv.Complex(), rv.Type().Bits()), nil
-	case reflect.String:
-		return quote(rv.String()), nil
-	case reflect.Struct:
-
-	}
-
-	return fmt.Sprintf("%v", rv.Interface()), nil
-}
-
-func fmtInt(v int64) string { return strconv.FormatInt(v, 10) }
-
-func fmtUint(v uint64) string { return strconv.FormatUint(v, 10) }
-
-func fmtFloat(v float64, bitSize int) string {
-	return strconv.FormatFloat(v, 'g', -1, bitSize)
-}
-
-func fmtComplex(v complex128, bitSize int) string {
-	return strconv.FormatComplex(v, 'g', -1, bitSize)
 }

@@ -6,11 +6,10 @@ package env
 
 import (
 	"fmt"
+	"github.com/go-pogo/errors"
+	"github.com/go-pogo/rawconv"
 	"strings"
 	"unicode"
-
-	"github.com/go-pogo/errors"
-	"github.com/go-pogo/parseval"
 )
 
 const (
@@ -19,12 +18,16 @@ const (
 	ErrEmptyKey        errors.Msg = "empty key"
 )
 
-// Value is an alias of parseval.Value.
-type Value = parseval.Value
+// Value is an alias of rawconv.Value.
+type Value = rawconv.Value
 
 type NamedValue struct {
 	Name  string
 	Value Value
+}
+
+func (nv NamedValue) GoString() string {
+	return `env.NamedValue(` + nv.Name + `="` + nv.Value.String() + `")`
 }
 
 // Parse parses a string containing a possible key value pair. Any whitespace
