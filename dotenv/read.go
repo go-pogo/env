@@ -143,6 +143,9 @@ func (r *Reader) ReadAll() (env.Map, error) {
 		if err != nil {
 			return res, err
 		}
+		if fr == nil {
+			continue
+		}
 
 		m, err := fr.ReadAll()
 		if err != nil {
