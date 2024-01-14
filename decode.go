@@ -54,7 +54,7 @@ func NewDecoder(src ...Lookupper) *Decoder {
 }
 
 // NewReaderDecoder returns a new Decoder similar to calling NewDecoder with
-// NewReader.
+// NewReader as argument.
 func NewReaderDecoder(r io.Reader) *Decoder {
 	return &Decoder{
 		Options:   envtag.DefaultOptions(),
@@ -98,10 +98,10 @@ func (d *Decoder) Decode(v any) error {
 
 func (d *Decoder) decodeField(rv reflect.Value, tag envtag.Tag) error {
 	val, err := d.Lookup(tag.Name)
-	if err != nil {
-		if !IsNotFound(err) {
-			return err
-		}
+	if err != nil && !IsNotFound(err) {
+		return err
+	}
+	if val.String() == "" {
 		if tag.Default == "" {
 			return nil
 		}
