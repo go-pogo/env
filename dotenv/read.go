@@ -168,7 +168,7 @@ func (r *Reader) Close() error {
 	for _, f := range r.files {
 		if f.reader != nil {
 			f.notExists = false
-			errors.Append(&err, f.reader.Close())
+			errors.AppendFunc(&err, f.reader.Close)
 		}
 	}
 	return err
