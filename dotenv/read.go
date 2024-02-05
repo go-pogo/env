@@ -12,7 +12,7 @@ import (
 	"path"
 )
 
-const ErrNoFilesLoaded = "no files loaded"
+const ErrNoFilesLoaded errors.Msg = "no files loaded"
 
 var (
 	_ env.Lookupper = new(Reader)
