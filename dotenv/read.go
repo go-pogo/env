@@ -15,8 +15,8 @@ import (
 const ErrNoFilesLoaded errors.Msg = "no files loaded"
 
 var (
-	_ env.Lookupper = new(Reader)
-	_ env.ReadAller = new(Reader)
+	_ env.Lookupper = (*Reader)(nil)
+	_ env.ReadAller = (*Reader)(nil)
 )
 
 type Reader struct {
@@ -49,7 +49,7 @@ func Read(dir string, ae ActiveEnvironment) *Reader {
 
 // ReadFS reads .env files from fsys.
 func ReadFS(fsys fs.FS, ae ActiveEnvironment) *Reader {
-	var r Reader
+	r := Reader{ReplaceVars: true}
 	r.init(fsys)
 
 	if ae != "" {
@@ -76,8 +76,6 @@ func (r *Reader) init(fsys fs.FS) {
 		{name: ".env"},
 		{name: ".env.local"},
 	}
-
-	r.ReplaceVars = true
 }
 
 func (r *Reader) reader(f *file) (*env.FileReader, error) {
