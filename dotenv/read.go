@@ -62,9 +62,6 @@ func ReadFS(fsys fs.FS, ae ActiveEnvironment) *Reader {
 	return &r
 }
 
-// Deprecated: use ReadFS instead.
-func NewReader(fsys fs.FS, ae ActiveEnvironment) *Reader { return ReadFS(fsys, ae) }
-
 func (r *Reader) init(fsys fs.FS) {
 	if r.files != nil {
 		return
