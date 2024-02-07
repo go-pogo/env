@@ -16,7 +16,11 @@ func TestGetActiveEnvironment(t *testing.T) {
 		wantRemain []string
 	}
 	tests := map[string]testCase{
-		"empty": {},
+		"nil": {},
+		"empty": {
+			args:       []string{""},
+			wantRemain: []string{""},
+		},
 		"none": {
 			args:       []string{"-test", flag1 + "x", flag2 + "y"},
 			wantRemain: []string{"-test", flag1 + "x", flag2 + "y"},
