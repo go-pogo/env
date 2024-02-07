@@ -31,25 +31,33 @@ func Unmarshal(data []byte, v any) error {
 	return NewDecoder(NewReader(bytes.NewReader(data))).Decode(v)
 }
 
-var _ Lookupper = new(Decoder)
+var _ Lookupper = (*Decoder)(nil)
 
 type Decoder struct {
 	envtag.Options
-	Lookupper
+	l Lookupper
 	r *Replacer
 
 	// ReplaceVars
 	ReplaceVars bool
 }
 
+const panicNilLookupper = "env.Decoder: Lookupper must not be nil"
+
 // NewDecoder returns a new Decoder that looks up environment variables from
 // any Lookupper.
-//
-//	dec := NewDecoder(NewReader(r))
 func NewDecoder(src ...Lookupper) *Decoder {
+	l, chained := chain(src...)
+	if !chained && l == nil {
+		panic(panicNilLookupper)
+	} else if c, ok := l.(chainLookupper); ok && len(c) == 0 {
+		panic(panicNilLookupper)
+	}
+
 	return &Decoder{
-		Options:   envtag.DefaultOptions(),
-		Lookupper: Chain(src...),
+		l:           l,
+		Options:     envtag.DefaultOptions(),
+		ReplaceVars: true,
 	}
 }
 
@@ -57,14 +65,19 @@ func NewDecoder(src ...Lookupper) *Decoder {
 // NewReader as argument.
 func NewReaderDecoder(r io.Reader) *Decoder {
 	return &Decoder{
-		Options:   envtag.DefaultOptions(),
-		Lookupper: NewReader(r),
+		l:           NewReader(r),
+		Options:     envtag.DefaultOptions(),
+		ReplaceVars: true,
 	}
 }
 
 // WithLookupper changes the Decoder's internal Lookupper to l.
 func (d *Decoder) WithLookupper(l Lookupper) *Decoder {
-	d.Lookupper = l
+	if l == nil {
+		panic(panicNilLookupper)
+	}
+
+	d.l = l
 	d.r = nil
 	return d
 }
@@ -74,10 +87,8 @@ func (d *Decoder) WithOptions(opts envtag.Options) *Decoder {
 	return d
 }
 
-const panicNilLookupper = "env.Decoder: Lookupper must not be nil"
-
 func (d *Decoder) Decode(v any) error {
-	if d.Lookupper == nil {
+	if d.l == nil {
 		panic(panicNilLookupper)
 	}
 
@@ -112,14 +123,14 @@ func (d *Decoder) decodeField(rv reflect.Value, tag envtag.Tag) error {
 }
 
 func (d *Decoder) Lookup(key string) (Value, error) {
-	if d.Lookupper == nil {
+	if d.l == nil {
 		panic(panicNilLookupper)
 	}
 	if !d.ReplaceVars {
-		return d.Lookupper.Lookup(key)
+		return d.l.Lookup(key)
 	}
 	if d.r == nil {
-		d.r = NewReplacer(d.Lookupper)
+		d.r = NewReplacer(d.l)
 	}
 	return d.r.Lookup(key)
 }

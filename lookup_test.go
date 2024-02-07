@@ -22,4 +22,17 @@ func TestChain(t *testing.T) {
 		chain2 := Chain(chain1, EnvironLookup())
 		assert.Len(t, chain2, 3)
 	})
+	t.Run("nil", func(t *testing.T) {
+		assert.Equal(t, chainLookupper{}, Chain(nil))
+	})
+	t.Run("nils", func(t *testing.T) {
+		assert.Equal(t, chainLookupper{}, Chain(nil, nil))
+	})
+}
+
+func TestChain_Lookup(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
+		_, err := Chain(nil).Lookup("doesnt matter")
+		assert.ErrorIs(t, err, ErrNotFound)
+	})
 }

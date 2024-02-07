@@ -42,20 +42,37 @@ func Lookup(key string, from ...Lookupper) (Value, error) {
 	return "", errors.New(ErrNotFound)
 }
 
-var _ Lookupper = new(chain)
+var _ Lookupper = (chainLookupper)(nil)
 
-type chain []Lookupper
+type chainLookupper []Lookupper
 
 // Chain multiple Lookupper(s) to lookup keys from.
 func Chain(l ...Lookupper) Lookupper {
-	if n := len(l); n == 1 {
-		return l[0]
+	res, chained := chain(l...)
+	if !chained && res == nil {
+		return make(chainLookupper, 0)
 	}
-	if c, ok := l[0].(chain); ok {
-		c = append(c, l[1:]...)
-		return c
-	}
-	return chain(l)
+	return res
 }
 
-func (c chain) Lookup(key string) (Value, error) { return Lookup(key, c...) }
+func chain(lookuppers ...Lookupper) (Lookupper, bool) {
+	if n := len(lookuppers); n == 1 {
+		return lookuppers[0], false
+	}
+
+	var res chainLookupper
+	if c, ok := lookuppers[0].(chainLookupper); ok {
+		res = c
+		lookuppers = lookuppers[1:]
+	} else {
+		res = make(chainLookupper, 0, len(lookuppers))
+	}
+	for _, l := range lookuppers {
+		if l != nil {
+			res = append(res, l)
+		}
+	}
+	return res, true
+}
+
+func (c chainLookupper) Lookup(key string) (Value, error) { return Lookup(key, c...) }

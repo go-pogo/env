@@ -11,6 +11,19 @@ import (
 	"testing"
 )
 
+func TestNewDecoder(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
+		assert.PanicsWithValue(t, panicNilLookupper, func() {
+			_ = NewDecoder(nil)
+		})
+	})
+	t.Run("nils", func(t *testing.T) {
+		assert.PanicsWithValue(t, panicNilLookupper, func() {
+			_ = NewDecoder(nil, nil)
+		})
+	})
+}
+
 func TestDecoder_Decode(t *testing.T) {
 	type fixtureBasic struct {
 		Foo    string
@@ -138,7 +151,7 @@ INLINE_FOO=not used`,
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			dec := NewDecoder(NewReader(strings.NewReader(tc.input)))
+			dec := NewReaderDecoder(strings.NewReader(tc.input))
 			if tc.setup != nil {
 				tc.setup(dec)
 			}
@@ -164,5 +177,13 @@ INLINE_FOO=not used`,
 	t.Run("non-struct pointer", func(t *testing.T) {
 		var v int
 		assert.ErrorIs(t, NewDecoder(EnvironLookup()).Decode(&v), ErrStructPointerExpected)
+	})
+
+	t.Run("nil lookupper", func(t *testing.T) {
+		assert.PanicsWithValue(t, panicNilLookupper, func() {
+			var dec Decoder
+			var dest fixtureBasic
+			dec.Decode(&dest)
+		})
 	})
 }

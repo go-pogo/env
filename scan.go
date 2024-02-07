@@ -16,7 +16,7 @@ type Scanner struct {
 	scanner *bufio.Scanner
 }
 
-const panicNilReader = "env: reader must not be nil"
+const panicNilReader = "env: io.Reader must not be nil"
 
 // NewScanner returns a new Scanner which wraps a bufio.Scanner that reads from
 // io.Reader r. The split function defaults to ScanLines.
