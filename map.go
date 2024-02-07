@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-var _ Lookupper = new(Map)
+var _ Lookupper = (Map)(nil)
 
 // Map represents a map of key value pairs.
 type Map map[string]Value

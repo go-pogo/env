@@ -10,14 +10,20 @@ import (
 	"io/fs"
 )
 
-type ReadAller interface {
+// ReadLookupper reads environment variables from any source.
+type ReadLookupper interface {
+	Lookupper
 	ReadAll() (Map, error)
 }
 
-var (
-	_ Lookupper = new(Reader)
-	_ ReadAller = new(Reader)
-)
+// ReadCloseLookupper reads environment variables from any source that needs to
+// be closed when done.
+type ReadCloseLookupper interface {
+	ReadLookupper
+	io.Closer
+}
+
+var _ ReadLookupper = (*Reader)(nil)
 
 type Reader struct {
 	scanner *Scanner
@@ -26,6 +32,8 @@ type Reader struct {
 
 // reader prevents FileReader from needing to have a public *Reader
 type reader = Reader
+
+var _ ReadCloseLookupper = (*FileReader)(nil)
 
 type FileReader struct {
 	*reader
