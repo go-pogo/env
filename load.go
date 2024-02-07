@@ -11,10 +11,7 @@ import (
 	"os"
 )
 
-type Loader interface {
-	Load() error
-	Overload() error
-}
+var _ fs.FS = (*osFS)(nil)
 
 // osFS is a fs.FS compatible wrapper around os.Open.
 type osFS struct{}
@@ -47,7 +44,7 @@ func openAndLoad(fsys fs.FS, filename string, overload bool) (err error) {
 		return errors.WithStack(err)
 	}
 
-	defer f.Close()
+	defer errors.AppendFunc(&err, f.Close)
 	return readAndLoad(f, overload)
 }
 
