@@ -14,10 +14,7 @@ import (
 
 const ErrNoFilesLoaded errors.Msg = "no files loaded"
 
-var (
-	_ env.Lookupper = (*Reader)(nil)
-	_ env.ReadAller = (*Reader)(nil)
-)
+var _ env.ReadCloseLookupper = (*Reader)(nil)
 
 type Reader struct {
 	fsys  fs.FS
@@ -110,16 +107,20 @@ func (r *Reader) Lookup(key string) (env.Value, error) {
 			return "", err
 		}
 		if fr == nil {
-			anyLoaded = true
 			continue
 		}
 
 		v, err := fr.Lookup(key)
-		if env.IsNotFound(err) {
-			continue
-		}
-		return v, err
+		if err != nil {
+			if env.IsNotFound(err) {
+				anyLoaded = true
+				continue
+			}
 
+			return v, err
+		} else {
+			return v, nil
+		}
 	}
 	if !anyLoaded {
 		return "", errors.New(ErrNoFilesLoaded)
