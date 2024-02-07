@@ -43,7 +43,10 @@ func Environ() Map {
 	return res
 }
 
-// EnvironLookup returns a Lookupper which looks up environment variables.
+// EnvironLookup returns a Lookupper which looks up environment variables from
+// the operating system.
+//
+//	dec := NewDecoder(EnvironLookup())
 func EnvironLookup() Lookupper {
 	return LookupperFunc(func(key string) (Value, error) {
 		if v, ok := LookupEnv(key); ok {

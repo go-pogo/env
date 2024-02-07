@@ -16,8 +16,7 @@ type Loader interface {
 	Overload() error
 }
 
-var _ fs.FS = new(osFS)
-
+// osFS is a fs.FS compatible wrapper around os.Open.
 type osFS struct{}
 
 func (o osFS) Open(name string) (fs.File, error) { return os.Open(name) }

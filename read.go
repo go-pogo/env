@@ -32,6 +32,10 @@ type FileReader struct {
 	file fs.File
 }
 
+// NewReader returns a Reader which looks up environment variables from
+// the provided io.Reader r.
+//
+//	dec := NewDecoder(NewReader(r))
 func NewReader(r io.Reader) *Reader {
 	return &Reader{
 		scanner: NewScanner(r),
@@ -39,6 +43,10 @@ func NewReader(r io.Reader) *Reader {
 	}
 }
 
+// NewFileReader returns a Reader which looks up environment variables from
+// the provided io.Reader r.
+//
+//	dec := NewDecoder(NewFileReader(f))
 func NewFileReader(f fs.File) *FileReader {
 	return &FileReader{
 		reader: NewReader(f),
