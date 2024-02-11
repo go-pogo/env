@@ -13,15 +13,15 @@ import (
 // Setenv sets the Value of the environment variable named by the key using
 // os.Setenv.
 func Setenv(key string, val Value) error {
-	return os.Setenv(key, val.String())
+	return errors.WithStack(os.Setenv(key, val.String()))
 }
 
 // Getenv retrieves the Value of the environment variable named by the key.
 // It behaves similar to os.Getenv.
 func Getenv(key string) Value { return Value(os.Getenv(key)) }
 
-// LookupEnv retrieves the Value of the environment variable named by the key.
-// It behaves similar to os.LookupEnv.
+// LookupEnv retrieves the Value of the environment variable named by the key
+// using os.LookupEnv.
 func LookupEnv(key string) (Value, bool) {
 	v, ok := os.LookupEnv(key)
 	return Value(v), ok
