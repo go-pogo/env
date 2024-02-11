@@ -8,13 +8,7 @@ import (
 	"strings"
 )
 
-type Normalizer interface {
-	Normalize(str string) string
-}
-
-type NormalizerFunc func(str string) string
-
-func (f NormalizerFunc) Normalize(str string) string { return f(str) }
+type NormalizerFunc func(string) string
 
 type Options struct {
 	// EnvKey is used to look up the env tag string from a reflect.StructTag.
@@ -24,7 +18,7 @@ type Options struct {
 	DefaultKey string
 	// Normalizer is used to normalize a reflect.StructField's name
 	// when no name is provided in the env tag string.
-	Normalizer Normalizer
+	Normalizer NormalizerFunc
 	// StrictTags ignores fields that do not have an env tag when set to true.
 	StrictTags bool
 }
@@ -34,7 +28,7 @@ func DefaultOptions() Options {
 	return Options{
 		EnvKey:     EnvKey,
 		DefaultKey: DefaultKey,
-		Normalizer: NormalizerFunc(NormalizeFieldName),
+		Normalizer: NormalizeFieldName,
 		StrictTags: false,
 	}
 }
