@@ -83,7 +83,7 @@ func TestEncoder(t *testing.T) {
 			input: fixtureNested{Qux: "x00"},
 			want: []string{
 				`QUX=`,
-				`NESTED_FOO=bar`,
+				`FOO=bar`,
 			},
 		},
 	}

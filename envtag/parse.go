@@ -37,7 +37,7 @@ const panicNormalizerEmptyName = "envtag: Normalizer returned an empty name"
 // ParseStructField uses the field's reflect.StructTag to lookup the tag string
 // according to the provided Options. It will always return a usable Tag, even
 // if an error has occurred.
-func ParseStructField(opts Options, field reflect.StructField) (tag Tag, err error) {
+func ParseStructField(opts Options, field reflect.StructField, prefix string) (tag Tag, err error) {
 	if !field.IsExported() {
 		tag.Ignore = true
 		return
@@ -63,7 +63,11 @@ func ParseStructField(opts Options, field reflect.StructField) (tag Tag, err err
 		} else {
 			// use field name as is, it is the callers responsibility to set a
 			// valid Normalizer
-			tag.Name = field.Name
+			if prefix == "" {
+				tag.Name = field.Name
+			} else {
+				tag.Name = prefix + "_" + field.Name
+			}
 		}
 	}
 	if opts.DefaultKey != "" {
@@ -77,18 +81,12 @@ func parse(tag *Tag, str string) error {
 		return nil
 	}
 
-	const ignore = "-"
-	if str == ignore {
+	if str == "-" || strings.HasPrefix(str, "-,") {
 		tag.Ignore = true
 		return nil
 	}
 
 	split := strings.Split(str, ",")
-	if split[0] == ignore {
-		tag.Ignore = true
-		return nil
-	}
-
 	tag.Name = split[0]
 	split = split[1:]
 
@@ -100,8 +98,6 @@ func parse(tag *Tag, str string) error {
 			tag.Inline = true
 		case "include":
 			tag.Include = true
-		case "noprefix":
-			tag.NoPrefix = true
 		default:
 			// invalid options increment the index position,
 			// so we end up with a slice of invalid options
@@ -116,7 +112,10 @@ func parse(tag *Tag, str string) error {
 		n--
 	}
 	if len(split) > 0 {
-		return errors.WithStack(&Error{TagString: str, Unsupported: split})
+		return errors.WithStack(&Error{
+			TagString:   str,
+			Unsupported: split,
+		})
 	}
 	return nil
 }

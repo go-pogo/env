@@ -69,44 +69,32 @@ func (t *traverser) traverse(pv reflect.Value, prefix string, include bool) erro
 		opts := t.Options
 		opts.StrictTags = opts.StrictTags && !include
 
-		tag, _ := envtag.ParseStructField(opts, field)
+		tag, _ := envtag.ParseStructField(opts, field, prefix)
 		if tag.ShouldIgnore() {
 			continue
 		}
-
-		if kind == reflect.Struct && !t.isTypeKnown(rv.Type()) {
-			p := prefix
-			if tag.NoPrefix {
-				// ignore prefix
-				p = tag.Name
-			} else if !tag.Inline && !field.Anonymous {
-				// append tag name to prefix
-				p = prefixAppend(prefix, tag.Name)
-			}
-
-			if err := t.traverse(rv, p, include || tag.Include); err != nil {
+		if kind != reflect.Struct || t.isTypeKnown(rv.Type()) {
+			if err := t.handleField(rv, tag); err != nil {
 				return err
-			} else {
-				// no error, continue to next field
-				continue
 			}
+			continue
 		}
 
-		if !tag.NoPrefix {
-			tag.Name = prefixAppend(prefix, tag.Name)
+		var p string
+		if tag.Inline || field.Anonymous {
+			p = prefix
+		} else {
+			p = tag.Name
 		}
-		if err := t.handleField(rv, tag); err != nil {
+
+		if err := t.traverse(rv, p, include || tag.Include); err != nil {
 			return err
+		} else {
+			// no error, continue to next field
+			continue
 		}
 	}
 	return nil
-}
-
-func prefixAppend(prefix, name string) string {
-	if prefix == "" {
-		return name
-	}
-	return prefix + "_" + name
 }
 
 // underlyingKind resolves the underlying reflect.Kind of typ.

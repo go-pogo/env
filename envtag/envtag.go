@@ -20,14 +20,11 @@ type Tag struct {
 	// Include indicates the structs child fields should be included, even if
 	// they do not have an env tag and Options.StrictTag is set to true.
 	Include bool
-	// NoPrefix indicates the tag's name should not be prefixed with any of it's
-	// parent's names.
-	NoPrefix bool
 }
 
 // IsEmpty indicates if Tag is considered empty.
 func (t Tag) IsEmpty() bool {
-	return t.Name == "" && !t.Ignore && !t.Inline && !t.NoPrefix
+	return t.Name == "" && !t.Ignore && !t.Inline && !t.Include
 }
 
 // ShouldIgnore indicates if Tag should be ignored.
