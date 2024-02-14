@@ -112,8 +112,8 @@ func (n *FieldNameNormalizer) normalize(buf *strings.Builder, str string) {
 			cur -= 'a'
 			lastLower = i
 
-		case cur >= '0' && cur <= '9':
-			if i > 2 && (lastUpper == i-2 || lastLower == i-2) {
+		case isDigit(cur):
+			if i > 2 && (lastUpper-lastLower == 1 || lastLower-lastUpper == 1) {
 				buf.WriteRune('_')
 			}
 			lastDigits = i

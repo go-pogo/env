@@ -9,21 +9,23 @@ import (
 	"testing"
 )
 
-func TestNormalizeFieldName(t *testing.T) {
+func TestFieldNameNormalizer(t *testing.T) {
 	tests := map[string]string{
 		"Foo":          "FOO",
 		"FOO":          "FOO",
-		"FOO123":       "FOO_123",
+		"FOO123":       "FOO123",
 		"FOOBar":       "FOO_BAR",
 		"FooBar":       "FOO_BAR",
 		"FooBAR":       "FOO_BAR",
 		"Foo_BAR":      "FOO_BAR",
-		"Foo123BAR":    "FOO_123_BAR",
+		"Foo123BAR":    "FOO123_BAR",
 		"FooBarBaz":    "FOO_BAR_BAZ",
 		"FOOBarBaz":    "FOO_BAR_BAZ",
 		"FooBARBaz":    "FOO_BAR_BAZ",
-		"FooBAR123Baz": "FOO_BAR_123_BAZ",
+		"FooBAR123Baz": "FOO_BAR123_BAZ",
 		"FooBarBAZ":    "FOO_BAR_BAZ",
+		"ApiV1":        "API_V1",
+		"ApiV1Test":    "API_V1_TEST",
 
 		// below special cases probably result in an unexpected normalized name
 		// but it's not worth the effort to fix this right now. a workaround
@@ -31,9 +33,11 @@ func TestNormalizeFieldName(t *testing.T) {
 		"SomeGraphQL": "SOME_GRAPH_QL", // SOME_GRAPHQL
 		"PostgreSQL":  "POSTGRE_SQL",   // POSTGRESQL
 	}
+
+	var n FieldNameNormalizer
 	for name, want := range tests {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, want, NormalizeFieldName(name))
+			assert.Equal(t, want, n.Normalize(name, ""))
 		})
 	}
 }
