@@ -4,8 +4,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-pogo/errors v0.9.0 h1:fM3PHQ9hs7CE53FWG7JLbAr9cYu3ly9lb8CmgttRy+k=
 github.com/go-pogo/errors v0.9.0/go.mod h1:I6kCHOu3yR1WeJtGWusyTxQUQX257cw6xFVnYB4+Rtw=
-github.com/go-pogo/rawconv v0.4.1 h1:qOAVOYF0xPduEDrQuMrHVLGlruo8Y1HyKHRLTOzyo+Y=
-github.com/go-pogo/rawconv v0.4.1/go.mod h1:E4fJcrsGlaorHmz7xL/uV1E6azycghQXKWDI+WcgVoo=
+github.com/go-pogo/rawconv v0.5.0 h1:DrBuGAAsf3ivpXv7vJ7Ql9bFjgGFCdNnkZZY1ZSCrMg=
+github.com/go-pogo/rawconv v0.5.0/go.mod h1:7V7k9JS5lIx1CZXiabFhN3sqyo8dIc7Xs/WroV5bp/Q=
 github.com/go-pogo/writing v0.1.1 h1:tl7JsWk9hUj6YkRXxU5dYJBdhQjthH7T5HhuZ/tLj+w=
 github.com/go-pogo/writing v0.1.1/go.mod h1:HcMqR6gCOswRY2J4/YSGZk5TjkmMUyUDo6Cp0890C64=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
