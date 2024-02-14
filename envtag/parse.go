@@ -56,7 +56,7 @@ func ParseStructField(opts Options, field reflect.StructField, prefix string) (t
 	}
 	if tag.Name == "" {
 		if opts.Normalizer != nil {
-			tag.Name = opts.Normalizer(field.Name)
+			tag.Name = opts.Normalizer.Normalize(field.Name, prefix)
 			if tag.Name == "" {
 				panic(panicNormalizerEmptyName)
 			}
