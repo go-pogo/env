@@ -16,17 +16,14 @@ func TestParseTag(t *testing.T) {
 		wantTag Tag
 		wantErr error
 	}{
-		"":                 {wantTag: Tag{}},
-		"-":                {wantTag: Tag{Ignore: true}},
-		"-,noprefix":       {wantTag: Tag{Ignore: true}},
-		"foo":              {wantTag: Tag{Name: "foo"}},
-		"foo,inline":       {wantTag: Tag{Name: "foo", Inline: true}},
-		"foo,include,":     {wantTag: Tag{Name: "foo", Include: true}},
-		"foo,,noprefix":    {wantTag: Tag{Name: "foo", NoPrefix: true}},
-		"FOOBAR":           {wantTag: Tag{Name: "FOOBAR"}},
-		"noprefix":         {wantTag: Tag{Name: "noprefix"}},
-		",noprefix":        {wantTag: Tag{NoPrefix: true}},
-		",inline,noprefix": {wantTag: Tag{Inline: true, NoPrefix: true}},
+		"":             {wantTag: Tag{}},
+		"-":            {wantTag: Tag{Ignore: true}},
+		"-,inline":     {wantTag: Tag{Ignore: true}},
+		"foo":          {wantTag: Tag{Name: "foo"}},
+		"foo,inline":   {wantTag: Tag{Name: "foo", Inline: true}},
+		"foo,include,": {wantTag: Tag{Name: "foo", Include: true}},
+		"FOOBAR":       {wantTag: Tag{Name: "FOOBAR"}},
+		",inline":      {wantTag: Tag{Inline: true}},
 
 		",inline,invalid": {
 			wantTag: Tag{Inline: true},
@@ -35,10 +32,10 @@ func TestParseTag(t *testing.T) {
 				Unsupported: []string{"invalid"},
 			},
 		},
-		",extra1 ,noprefix,extra2,": {
-			wantTag: Tag{NoPrefix: true},
+		",extra1 ,inline,extra2,": {
+			wantTag: Tag{Inline: true},
 			wantErr: &Error{
-				TagString:   ",extra1 ,noprefix,extra2,",
+				TagString:   ",extra1 ,inline,extra2,",
 				Unsupported: []string{"extra1 ", "extra2"},
 			},
 		},
@@ -106,13 +103,13 @@ func TestParseStructField(t *testing.T) {
 				tc.opts = &defaultOpts
 			}
 
-			have, _ := ParseStructField(*tc.opts, tc.field)
+			have, _ := ParseStructField(*tc.opts, tc.field, "")
 			assert.Equal(t, tc.want, have)
 		})
 	}
 
 	t.Run("nil normalizer", func(t *testing.T) {
-		have, err := ParseStructField(Options{}, reflect.TypeOf(fixtureBasic{}).Field(0))
+		have, err := ParseStructField(Options{}, reflect.TypeOf(fixtureBasic{}).Field(0), "")
 		assert.NoError(t, err)
 		assert.Equal(t, Tag{Name: "Foo"}, have)
 	})
@@ -121,11 +118,12 @@ func TestParseStructField(t *testing.T) {
 		assert.PanicsWithValue(t, panicNormalizerEmptyName, func() {
 			_, _ = ParseStructField(
 				Options{
-					Normalizer: NormalizerFunc(func(str string) string {
+					Normalizer: NormalizerFunc(func(_, _ string) string {
 						return ""
 					}),
 				},
 				reflect.TypeOf(fixtureBasic{}).Field(0),
+				"",
 			)
 		})
 	})
