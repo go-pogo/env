@@ -6,7 +6,6 @@ package env
 
 import (
 	"github.com/stretchr/testify/assert"
-	"reflect"
 	"strings"
 	"testing"
 )
@@ -25,164 +24,193 @@ func TestNewDecoder(t *testing.T) {
 }
 
 func TestDecoder_Decode(t *testing.T) {
-	type fixtureBasic struct {
-		Foo    string
-		Ignore bool
-	}
+	t.Run("basic", func(t *testing.T) {
+		type subj struct {
+			Foo string
+			Ok  bool
+		}
+		const input = "FOO=bar\nOK=true"
 
-	type fixtureBasic2 struct {
-		Foo    string
-		Ignore bool `env:"-"`
-	}
+		var have subj
+		dec := NewReaderDecoder(strings.NewReader(input))
+		assert.NoError(t, dec.Decode(&have))
+		assert.Exactly(t, subj{Foo: "bar", Ok: true}, have)
+	})
 
-	type fixtureBasic3 struct {
-		Foo    string `env:"CUSTOM_NAME,noprefix"`
-		Ignore bool   `env:"-"`
-	}
+	t.Run("strict", func(t *testing.T) {
+		type subj struct {
+			Foo string
+			Ok  bool
+		}
+		const input = "FOO=bar\nOK=true"
 
-	type fixtureNested struct {
-		Qux    string
-		Nested fixtureBasic
-	}
+		var have subj
+		dec := NewReaderDecoder(strings.NewReader(input)).Strict()
+		assert.NoError(t, dec.Decode(&have))
+		assert.Exactly(t, subj{}, have)
+	})
 
-	type fixtureNested2 struct {
-		Qux    string
-		Nested fixtureBasic3
-	}
+	t.Run("basic with ignored field", func(t *testing.T) {
+		type subj struct {
+			Foo    string
+			Ignore bool `env:"-"`
+		}
+		const input = "FOO=bar\nIGNORE=true"
 
-	type fixtureInline struct {
-		Qux    string
-		Inline fixtureBasic2 `env:",inline"`
-	}
+		var have subj
+		dec := NewReaderDecoder(strings.NewReader(input))
+		assert.NoError(t, dec.Decode(&have))
+		assert.Exactly(t, have, subj{Foo: "bar"})
+	})
 
-	type fixtureInclude struct {
-		IgnoreMe bool
-		Included fixtureBasic2 `env:",include"`
-	}
+	t.Run("strict with ignored field", func(t *testing.T) {
+		type subj struct {
+			Foo    string `env:"CUSTOM_NAME"`
+			Ignore bool   `env:"-"`
+		}
+		const input = "CUSTOM_NAME=bar\nIGNORE=true"
 
-	type fixtureInlineInclude struct {
-		IgnoreMe bool
-		Included fixtureBasic2 `env:",inline,include"`
-	}
+		var have subj
+		dec := NewReaderDecoder(strings.NewReader(input)).Strict()
+		assert.NoError(t, dec.Decode(&have))
+		assert.Exactly(t, subj{Foo: "bar"}, have)
+	})
 
-	type fixtureNoPrefix struct {
-		DeepNested fixtureNested2 `env:"DEEPNESTED"`
-	}
+	t.Run("nested", func(t *testing.T) {
+		type nested struct {
+			Foo string
+		}
+		type root struct {
+			Qux    string
+			Nested nested
+		}
 
-	tests := map[string]struct {
-		setup   func(dec *Decoder)
-		input   string
-		want    any
-		wantErr error
-	}{
-		"basic": {
-			input: "FOO=bar\nIGNORE=true",
-			want:  &fixtureBasic{Foo: "bar", Ignore: true},
-		},
-		"basic strict": {
-			setup: func(dec *Decoder) {
-				dec.StrictTags = true
-			},
-			input: "FOO=bar\nIGNORE=true",
-			want:  &fixtureBasic{},
-		},
-		"basic with ignored field": {
-			input: "FOO=bar\nIGNORE=true",
-			want:  &fixtureBasic2{Foo: "bar"},
-		},
-		"basic with StrictTags": {
-			setup: func(dec *Decoder) {
-				dec.StrictTags = true
-			},
-			input: "CUSTOM_NAME=bar\nIGNORE=true",
-			want:  &fixtureBasic3{Foo: "bar"},
-		},
-		"nested": {
-			input: "QUX=x00\nNESTED_FOO=bar",
-			want:  &fixtureNested{Qux: "x00", Nested: fixtureBasic{Foo: "bar"}},
-		},
-		"inline": {
-			input: `
-QUX=x00
-FOO=bar
-IGNORE=true
-INLINE_FOO=not used`,
-			want: &fixtureInline{
-				Qux: "x00",
-				Inline: fixtureBasic2{
-					Foo: "bar",
-				},
-			},
-		},
-		"include": {
-			setup: func(dec *Decoder) {
-				dec.StrictTags = true
-			},
-			input: "IGNORE_ME=true\nINCLUDED_FOO=bar",
-			want: &fixtureInclude{
-				Included: fixtureBasic2{
-					Foo: "bar",
-				},
-			},
-		},
-		"inline,include": {
-			setup: func(dec *Decoder) {
-				dec.StrictTags = true
-			},
-			input: "FOO=bar",
-			want: &fixtureInlineInclude{
-				Included: fixtureBasic2{
-					Foo: "bar",
-				},
-			},
-		},
-		"noprefix": {
-			input: "CUSTOM_NAME=bar\nDEEPNESTED_QUX=xoo",
-			want: &fixtureNoPrefix{
-				DeepNested: fixtureNested2{
-					Qux: "xoo",
-					Nested: fixtureBasic3{
-						Foo: "bar",
-					},
-				},
-			},
-		},
-	}
+		const input = "QUX=x00\nNESTED_FOO=bar"
+		want := root{
+			Qux:    "x00",
+			Nested: nested{Foo: "bar"},
+		}
 
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			dec := NewReaderDecoder(strings.NewReader(tc.input))
-			if tc.setup != nil {
-				tc.setup(dec)
+		var have root
+		dec := NewReaderDecoder(strings.NewReader(input))
+		assert.NoError(t, dec.Decode(&have))
+		assert.Exactly(t, want, have)
+	})
+
+	t.Run("inline", func(t *testing.T) {
+		type inline struct {
+			Foo string
+		}
+		type root struct {
+			Empty  string
+			Inline inline `env:",inline"`
+		}
+
+		const input = "FOO=bar\nINLINE_FOO=not good!"
+
+		t.Run("loose", func(t *testing.T) {
+			want := root{
+				Inline: inline{Foo: "bar"},
 			}
 
-			have := reflect.New(reflect.ValueOf(tc.want).Elem().Type()).Interface()
-			haveErr := dec.Decode(have)
-
-			if tc.wantErr == nil {
-				assert.NoError(t, haveErr)
-			} else {
-				assert.ErrorIs(t, tc.wantErr, haveErr)
-			}
-			assert.Exactly(t, tc.want, have)
+			var have root
+			dec := NewReaderDecoder(strings.NewReader(input))
+			assert.NoError(t, dec.Decode(&have))
+			assert.Exactly(t, want, have)
 		})
-	}
+
+		t.Run("strict", func(t *testing.T) {
+			var have root
+			dec := NewReaderDecoder(strings.NewReader(input)).Strict()
+			assert.NoError(t, dec.Decode(&have))
+			assert.Exactly(t, root{}, have)
+		})
+	})
+
+	t.Run("include", func(t *testing.T) {
+		type included struct {
+			Foo string
+		}
+		type root struct {
+			IgnoreMe bool     `env:"-"`
+			Included included `env:",include"`
+		}
+
+		const input = "IGNORE_ME=true\nINCLUDED_FOO=bar"
+		want := root{
+			Included: included{
+				Foo: "bar",
+			},
+		}
+
+		var have root
+		dec := NewReaderDecoder(strings.NewReader(input))
+		assert.NoError(t, dec.Decode(&have))
+		assert.Exactly(t, want, have)
+	})
+
+	t.Run("nested", func(t *testing.T) {
+		type deepNested struct {
+			Foo string `env:"CUSTOM_NAME"`
+			Bar string
+		}
+		type nested struct {
+			Qux        string
+			DeepNested deepNested `env:"DEEP"`
+		}
+		type root struct {
+			Nested nested `env:"NESTED"`
+		}
+
+		const input = "CUSTOM_NAME=foo\nNESTED_QUX=xoo"
+		want := root{
+			Nested: nested{
+				Qux: "xoo",
+				DeepNested: deepNested{
+					Foo: "foo",
+				},
+			},
+		}
+
+		var have root
+		dec := NewReaderDecoder(strings.NewReader(input))
+		assert.NoError(t, dec.Decode(&have))
+		assert.Exactly(t, want, have)
+	})
 
 	t.Run("nil", func(t *testing.T) {
-		assert.ErrorIs(t, NewDecoder(EnvironLookup()).Decode(nil), ErrStructPointerExpected)
+		assert.ErrorIs(t,
+			NewDecoder(EnvironLookup()).Decode(nil),
+			ErrStructPointerExpected,
+		)
 	})
+
 	t.Run("non-pointer", func(t *testing.T) {
-		assert.ErrorIs(t, NewDecoder(EnvironLookup()).Decode(fixtureBasic{}), ErrStructPointerExpected)
+		type subj struct {
+			Foo    string
+			Ignore bool
+		}
+		assert.ErrorIs(t,
+			NewDecoder(EnvironLookup()).Decode(subj{}),
+			ErrStructPointerExpected,
+		)
 	})
+
 	t.Run("non-struct pointer", func(t *testing.T) {
 		var v int
-		assert.ErrorIs(t, NewDecoder(EnvironLookup()).Decode(&v), ErrStructPointerExpected)
+		assert.ErrorIs(t,
+			NewDecoder(EnvironLookup()).Decode(&v),
+			ErrStructPointerExpected,
+		)
 	})
 
 	t.Run("nil lookupper", func(t *testing.T) {
 		assert.PanicsWithValue(t, panicNilLookupper, func() {
 			var dec Decoder
-			var dest fixtureBasic
+			var dest struct {
+				Foo    string
+				Ignore bool
+			}
 			dec.Decode(&dest)
 		})
 	})

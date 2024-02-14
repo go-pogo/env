@@ -71,6 +71,12 @@ func NewReaderDecoder(r io.Reader) *Decoder {
 	}
 }
 
+// Strict sets the StrictTags option to true.
+func (d *Decoder) Strict() *Decoder {
+	d.Options.StrictTags = true
+	return d
+}
+
 // WithLookupper changes the Decoder's internal Lookupper to l.
 func (d *Decoder) WithLookupper(l Lookupper) *Decoder {
 	if l == nil {
