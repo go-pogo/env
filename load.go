@@ -11,32 +11,48 @@ import (
 	"os"
 )
 
+// LoadEnv sets the environment variable named by key if it does not exist.
+func LoadEnv(key string, val Value) error {
+	if _, exists := os.LookupEnv(key); !exists {
+		return Setenv(key, val)
+	}
+	return nil
+}
+
+// OpenAndLoad reads environment variables from the filename and sets them using
+// Setenv when they do not exist.
+func OpenAndLoad(filename string) error { return OpenAndLoadFS(osFS{}, filename) }
+
+// OpenAndOverload reads environment variables from the filename and overwrites
+// them using Setenv when they already exist.
+func OpenAndOverload(filename string) error { return OpenAndOverloadFS(osFS{}, filename) }
+
+// OpenAndLoadFS reads environment variables from the filename in fsys and sets them
+// using Setenv when they do not exist.
+func OpenAndLoadFS(fsys fs.FS, filename string) error {
+	return openAndLoad(fsys, filename, false)
+}
+
+// OpenAndOverloadFS reads environment variables from the filename in fsys and
+// overwrites them using Setenv when they already exist.
+func OpenAndOverloadFS(fsys fs.FS, filename string) error {
+	return openAndLoad(fsys, filename, true)
+}
+
+// ReadAndLoad reads environment variables from r and sets them using Setenv
+// when they do not exist.
+func ReadAndLoad(r io.Reader) error { return readAndLoad(r, false) }
+
+// ReadAndOverload reads environment variables from r and overwrites them using
+// Setenv when they already exist.
+func ReadAndOverload(r io.Reader) error { return readAndLoad(r, true) }
+
 var _ fs.FS = (*osFS)(nil)
 
 // osFS is a fs.FS compatible wrapper around os.Open.
 type osFS struct{}
 
 func (o osFS) Open(name string) (fs.File, error) { return os.Open(name) }
-
-// Load reads environment variables from the filename and sets them using
-// Setenv when they do not exist.
-func Load(filename string) error { return LoadFS(osFS{}, filename) }
-
-// Overload reads environment variables from the filename and overwrites them
-// using Setenv when they already exist.
-func Overload(filename string) error { return OverloadFS(osFS{}, filename) }
-
-// LoadFS reads environment variables from the filename in fsys and sets them
-// using Setenv when they do not exist.
-func LoadFS(fsys fs.FS, filename string) error {
-	return openAndLoad(fsys, filename, false)
-}
-
-// OverloadFS reads environment variables from the filename in fsys and
-// overwrites them using Setenv when they already exist.
-func OverloadFS(fsys fs.FS, filename string) error {
-	return openAndLoad(fsys, filename, true)
-}
 
 func openAndLoad(fsys fs.FS, filename string, overload bool) (err error) {
 	f, err := fsys.Open(filename)
@@ -47,14 +63,6 @@ func openAndLoad(fsys fs.FS, filename string, overload bool) (err error) {
 	defer errors.AppendFunc(&err, f.Close)
 	return readAndLoad(f, overload)
 }
-
-// LoadFrom reads environment variables from r and sets them using Setenv when
-// they do not exist.
-func LoadFrom(r io.Reader) error { return readAndLoad(r, false) }
-
-// OverloadFrom reads environment variables from r and overwrites them using
-// Setenv when they already exist.
-func OverloadFrom(r io.Reader) error { return readAndLoad(r, true) }
 
 func readAndLoad(r io.Reader, overload bool) error {
 	m, err := NewReader(r).ReadAll()
