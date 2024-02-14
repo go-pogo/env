@@ -17,9 +17,9 @@ function using rawconv.Register.
 
 # Load and overload
 
-Additional os.Environ entries can be loaded using the Load and Overload
-functions. The source is read using a new reader and any bash style variables
-are replaced before being set using Setenv.
+Additional os.Environ entries can be loaded using the ReadAndLoad, OpenAndLoad,
+ReadAndOverload and OpenAndOverload functions. The source is read any bash style
+variables are replaced before being set to the system using Setenv.
 
 # Dotenv
 
