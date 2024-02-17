@@ -10,6 +10,12 @@ import (
 	"testing"
 )
 
+func testEnviron() Environment {
+	environ = make(Map)
+	return environ
+}
+func resetEnviron() { environ = System() }
+
 func TestSetenv(t *testing.T) {
 	t.Run("err", func(t *testing.T) {
 		wantErr := os.Setenv("", "foobar")
@@ -38,9 +44,9 @@ func TestEnviron(t *testing.T) {
 	}
 }
 
-func TestEnvironLookup(t *testing.T) {
+func TestSystem_Lookup(t *testing.T) {
 	t.Run("not found", func(t *testing.T) {
-		_, err := EnvironLookup().Lookup(randKey())
+		_, err := System().Lookup(randKey())
 		assert.True(t, IsNotFound(err))
 	})
 }
