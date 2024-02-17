@@ -53,7 +53,7 @@ func TestLookupFrom(t *testing.T) {
 			wantErr: ErrNotFound,
 		},
 		"system env": {
-			src:     []Lookupper{map1, map2, EnvironLookup()},
+			src:     []Lookupper{map1, map2, System()},
 			key:     "GOROOT",
 			wantVal: Value(se1),
 			wantErr: se2,
@@ -76,14 +76,14 @@ func TestLookupFrom(t *testing.T) {
 
 func TestChain(t *testing.T) {
 	t.Run("single", func(t *testing.T) {
-		want := EnvironLookup()
+		want := System()
 		have := Chain(want)
 		assert.Exactly(t, reflect.ValueOf(want).Pointer(), reflect.ValueOf(have).Pointer())
 	})
 	t.Run("chain", func(t *testing.T) {
-		chain1 := Chain(EnvironLookup(), EnvironLookup())
+		chain1 := Chain(System(), System())
 		assert.Len(t, chain1, 2)
-		chain2 := Chain(chain1, EnvironLookup())
+		chain2 := Chain(chain1, System())
 		assert.Len(t, chain2, 3)
 	})
 	t.Run("nil", func(t *testing.T) {

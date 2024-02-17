@@ -12,11 +12,14 @@ import (
 const ErrCircularDependency errors.Msg = "circular dependency"
 
 func ReplaceAll(m Map) (Map, error) {
-	r := Replacer{
-		src:    m,
-		result: make(Map, len(m)),
-		stack:  make([]string, 0, 2),
-	}
+	return replaceAll(m, &Replacer{
+		lookupper: m,
+		result:    make(Map, len(m)),
+		stack:     make([]string, 0, 2),
+	})
+}
+
+func replaceAll(m Map, r *Replacer) (Map, error) {
 	for k, v := range m {
 		if err := r.handle(k, v); err != nil {
 			return m, err
@@ -26,7 +29,7 @@ func ReplaceAll(m Map) (Map, error) {
 }
 
 type Replacer struct {
-	src Lookupper
+	lookupper Lookupper
 	// result contains already replaced values
 	result Map
 	// stack of keys that are being handled, used to detect circular dependencies
@@ -40,10 +43,26 @@ func NewReplacer(l Lookupper) *Replacer {
 	}
 
 	return &Replacer{
-		src:    l,
-		result: make(Map, n),
-		stack:  make([]string, 0, 2),
+		lookupper: l,
+		result:    make(Map, n),
+		stack:     make([]string, 0, 2),
 	}
+}
+
+func (r *Replacer) Unwrap() Lookupper { return r.lookupper }
+
+func (r *Replacer) Lookup(k string) (Value, error) {
+	if v, ok := r.result[k]; ok {
+		return v, nil
+	}
+
+	v, err := r.lookupper.Lookup(k)
+	if err != nil {
+		return v, err
+	}
+
+	err = r.handle(k, v)
+	return r.result[k], err
 }
 
 const chars = `[a-zA-Z0-9_-]+`
@@ -97,20 +116,6 @@ func (r *Replacer) handle(k string, v Value) error {
 	r.result[k] = Value(val)
 
 	return nil
-}
-
-func (r *Replacer) Lookup(k string) (Value, error) {
-	if v, ok := r.result[k]; ok {
-		return v, nil
-	}
-
-	v, err := r.src.Lookup(k)
-	if err != nil {
-		return v, err
-	}
-
-	err = r.handle(k, v)
-	return r.result[k], err
 }
 
 func contains(list []string, str string) bool {

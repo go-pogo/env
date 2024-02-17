@@ -31,12 +31,9 @@ func Unmarshal(data []byte, v any) error {
 	return NewDecoder(NewReader(bytes.NewReader(data))).Decode(v)
 }
 
-var _ Lookupper = (*Decoder)(nil)
-
 type Decoder struct {
 	envtag.Options
-	l Lookupper
-	r *Replacer
+	lookupper Lookupper
 
 	// ReplaceVars
 	ReplaceVars bool
@@ -55,7 +52,7 @@ func NewDecoder(src ...Lookupper) *Decoder {
 	}
 
 	return &Decoder{
-		l:           l,
+		lookupper:   l,
 		Options:     envtag.DefaultOptions(),
 		ReplaceVars: true,
 	}
@@ -65,7 +62,7 @@ func NewDecoder(src ...Lookupper) *Decoder {
 // NewReader as argument.
 func NewReaderDecoder(r io.Reader) *Decoder {
 	return &Decoder{
-		l:           NewReader(r),
+		lookupper:   NewReader(r),
 		Options:     envtag.DefaultOptions(),
 		ReplaceVars: true,
 	}
@@ -83,8 +80,7 @@ func (d *Decoder) WithLookupper(l Lookupper) *Decoder {
 		panic(panicNilLookupper)
 	}
 
-	d.l = l
-	d.r = nil
+	d.lookupper = l
 	return d
 }
 
@@ -94,7 +90,7 @@ func (d *Decoder) WithOptions(opts envtag.Options) *Decoder {
 }
 
 func (d *Decoder) Decode(v any) error {
-	if d.l == nil {
+	if d.lookupper == nil {
 		panic(panicNilLookupper)
 	}
 
@@ -106,6 +102,12 @@ func (d *Decoder) Decode(v any) error {
 		return errors.New(ErrStructPointerExpected)
 	}
 
+	if d.ReplaceVars {
+		if _, ok := d.lookupper.(*Replacer); !ok {
+			d.lookupper = NewReplacer(d.lookupper)
+		}
+	}
+
 	return (&traverser{
 		Options:     d.Options,
 		isTypeKnown: typeKnownByUnmarshaler,
@@ -114,7 +116,7 @@ func (d *Decoder) Decode(v any) error {
 }
 
 func (d *Decoder) decodeField(rv reflect.Value, tag envtag.Tag) error {
-	val, err := d.Lookup(tag.Name)
+	val, err := d.lookupper.Lookup(tag.Name)
 	if err != nil && !IsNotFound(err) {
 		return err
 	}
@@ -126,17 +128,4 @@ func (d *Decoder) decodeField(rv reflect.Value, tag envtag.Tag) error {
 	}
 
 	return unmarshaler.Unmarshal(val, rv)
-}
-
-func (d *Decoder) Lookup(key string) (Value, error) {
-	if d.l == nil {
-		panic(panicNilLookupper)
-	}
-	if !d.ReplaceVars {
-		return d.l.Lookup(key)
-	}
-	if d.r == nil {
-		d.r = NewReplacer(d.l)
-	}
-	return d.r.Lookup(key)
 }

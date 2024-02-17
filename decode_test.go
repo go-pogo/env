@@ -180,7 +180,7 @@ func TestDecoder_Decode(t *testing.T) {
 
 	t.Run("nil", func(t *testing.T) {
 		assert.ErrorIs(t,
-			NewDecoder(EnvironLookup()).Decode(nil),
+			NewDecoder(System()).Decode(nil),
 			ErrStructPointerExpected,
 		)
 	})
@@ -191,7 +191,7 @@ func TestDecoder_Decode(t *testing.T) {
 			Ignore bool
 		}
 		assert.ErrorIs(t,
-			NewDecoder(EnvironLookup()).Decode(subj{}),
+			NewDecoder(System()).Decode(subj{}),
 			ErrStructPointerExpected,
 		)
 	})
@@ -199,7 +199,7 @@ func TestDecoder_Decode(t *testing.T) {
 	t.Run("non-struct pointer", func(t *testing.T) {
 		var v int
 		assert.ErrorIs(t,
-			NewDecoder(EnvironLookup()).Decode(&v),
+			NewDecoder(System()).Decode(&v),
 			ErrStructPointerExpected,
 		)
 	})

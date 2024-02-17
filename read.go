@@ -8,22 +8,16 @@ import (
 	"github.com/go-pogo/errors"
 	"io"
 	"io/fs"
+	"os"
 )
 
-// ReadLookupper reads environment variables from any source.
-type ReadLookupper interface {
+// EnvironLookupper reads environment variables from any source.
+type EnvironLookupper interface {
 	Lookupper
-	ReadAll() (Map, error)
+	Environ() (Map, error)
 }
 
-// ReadCloseLookupper reads environment variables from any source that needs to
-// be closed when done.
-type ReadCloseLookupper interface {
-	ReadLookupper
-	io.Closer
-}
-
-var _ ReadLookupper = (*Reader)(nil)
+var _ EnvironLookupper = (*Reader)(nil)
 
 type Reader struct {
 	scanner *Scanner
@@ -33,7 +27,10 @@ type Reader struct {
 // reader prevents FileReader from needing to have a public *Reader
 type reader = Reader
 
-var _ ReadCloseLookupper = (*FileReader)(nil)
+var (
+	_ EnvironLookupper = (*FileReader)(nil)
+	_ io.Closer        = (*FileReader)(nil)
+)
 
 type FileReader struct {
 	*reader
@@ -98,10 +95,10 @@ func (r *Reader) Lookup(key string) (Value, error) {
 	return v, err
 }
 
-// ReadAll continues reading and scanning the internal io.Reader and returns a
+// Environ continues reading and scanning the internal io.Reader and returns a
 // Map of all found environment variables when either EOF is reached or an
 // error has occurred.
-func (r *Reader) ReadAll() (Map, error) {
+func (r *Reader) Environ() (Map, error) {
 	if _, _, err := r.scan(""); err != nil {
 		return nil, err
 	}
@@ -131,3 +128,10 @@ func (r *Reader) scan(lookup string) (Value, bool, error) {
 
 	return "", false, nil
 }
+
+var _ fs.FS = (*osFS)(nil)
+
+// osFS is a fs.FS compatible wrapper around os.Open.
+type osFS struct{}
+
+func (o osFS) Open(name string) (fs.File, error) { return os.Open(name) }
