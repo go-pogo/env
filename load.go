@@ -4,74 +4,69 @@
 
 package env
 
-import (
-	"github.com/go-pogo/errors"
-	"io"
-	"io/fs"
-	"os"
-)
-
 // LoadEnv sets the environment variable named by key if it does not exist.
+// Note: An OverloadEnv function does not exist, because its functionality would
+// be the same as Setenv.
 func LoadEnv(key string, val Value) error {
-	if _, exists := os.LookupEnv(key); !exists {
-		return Setenv(key, val)
+	if environ.Has(key) {
+		return nil
+	}
+	return environ.Set(key, val)
+}
+
+// Load sets the environment variables from the Map using Environment.Set when
+// they do not exist.
+func Load(environ Map) error {
+	return (&Loader{ReplaceVars: true}).Load(environ)
+}
+
+// Overload sets and overwrites the environment variables from the Map using
+// Environment.Set.
+func Overload(environ Map) error {
+	return (&Loader{Overload: true, ReplaceVars: true}).Load(environ)
+}
+
+type Loader struct {
+	environ Environment
+
+	Overload    bool
+	ReplaceVars bool
+}
+
+func NewLoader(dest Environment) *Loader {
+	return &Loader{
+		environ:     dest,
+		ReplaceVars: true,
+	}
+}
+
+// Load sets the environment variables from the Map using os.Setenv when they
+// do not exist.
+func (l *Loader) Load(m Map) error {
+	if l.environ == nil {
+		l.environ = environ
+	}
+
+	var lookupper Lookupper = m
+	if l.ReplaceVars {
+		lookupper = NewReplacer(Chain(m, l.environ))
+	}
+
+	for k := range m {
+		if !l.Overload && l.environ.Has(k) {
+			continue
+		}
+
+		v, err := lookupper.Lookup(k)
+		if err != nil {
+			if !IsNotFound(err) {
+				return err
+			}
+			continue
+		}
+		if err = l.environ.Set(k, v); err != nil {
+			return err
+		}
 	}
 	return nil
-}
-
-// OpenAndLoad reads environment variables from the filename and sets them using
-// Setenv when they do not exist.
-func OpenAndLoad(filename string) error { return OpenAndLoadFS(osFS{}, filename) }
-
-// OpenAndOverload reads environment variables from the filename and overwrites
-// them using Setenv when they already exist.
-func OpenAndOverload(filename string) error { return OpenAndOverloadFS(osFS{}, filename) }
-
-// OpenAndLoadFS reads environment variables from the filename in fsys and sets them
-// using Setenv when they do not exist.
-func OpenAndLoadFS(fsys fs.FS, filename string) error {
-	return openAndLoad(fsys, filename, false)
-}
-
-// OpenAndOverloadFS reads environment variables from the filename in fsys and
-// overwrites them using Setenv when they already exist.
-func OpenAndOverloadFS(fsys fs.FS, filename string) error {
-	return openAndLoad(fsys, filename, true)
-}
-
-// ReadAndLoad reads environment variables from r and sets them using Setenv
-// when they do not exist.
-func ReadAndLoad(r io.Reader) error { return readAndLoad(r, false) }
-
-// ReadAndOverload reads environment variables from r and overwrites them using
-// Setenv when they already exist.
-func ReadAndOverload(r io.Reader) error { return readAndLoad(r, true) }
-
-var _ fs.FS = (*osFS)(nil)
-
-// osFS is a fs.FS compatible wrapper around os.Open.
-type osFS struct{}
-
-func (o osFS) Open(name string) (fs.File, error) { return os.Open(name) }
-
-func openAndLoad(fsys fs.FS, filename string, overload bool) (err error) {
-	f, err := fsys.Open(filename)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	defer errors.AppendFunc(&err, f.Close)
-	return readAndLoad(f, overload)
-}
-
-func readAndLoad(r io.Reader, overload bool) error {
-	m, err := NewReader(r).ReadAll()
-	if err != nil {
-		return err
-	}
-	if m, err = ReplaceAll(m); err != nil {
-		return err
-	}
-
-	return m.load(overload)
 }

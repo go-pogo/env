@@ -6,8 +6,6 @@ package env
 
 import (
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -60,24 +58,6 @@ func TestMap_Lookup(t *testing.T) {
 		assert.ErrorIs(t, haveErr, ErrNotFound)
 		assert.Equal(t, Value(""), haveVal)
 	})
-}
-
-func TestMap_Load(t *testing.T) {
-	want := "this value is not overwritten"
-	key := randKey()
-	require.NoError(t, os.Setenv(key, want))
-
-	assert.Nil(t, (Map{key: "foobar"}).Load())
-	assert.Equal(t, want, Getenv(key).String())
-}
-
-func TestMap_Overload(t *testing.T) {
-	want := "foobar"
-	key := randKey()
-	require.NoError(t, os.Setenv(key, "overwrite me!"))
-
-	assert.Nil(t, (Map{key: Value(want)}).Overload())
-	assert.Equal(t, want, Getenv(key).String())
 }
 
 func randKey() string {
