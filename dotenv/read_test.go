@@ -60,7 +60,7 @@ func TestReader_Lookup(t *testing.T) {
 		t.Run(ae.String(), func(t *testing.T) {
 			for name, tc := range tt {
 				t.Run(name, func(t *testing.T) {
-					have, haveErr := ReadFS(fsys, ae).Lookup(tc.Key)
+					have, haveErr := ReadFS(fsys, "", ae).Lookup(tc.Key)
 					assert.Equal(t, tc.Want, have)
 					if tc.WantErr == nil {
 						assert.NoError(t, haveErr)
@@ -73,7 +73,7 @@ func TestReader_Lookup(t *testing.T) {
 	}
 }
 
-func TestReader_ReadAll(t *testing.T) {
+func TestReader_Environ(t *testing.T) {
 	fsys := fstest.MapFS{
 		".env.prod": &fstest.MapFile{
 			Data: []byte("FOO=BAR\nQUX=XOO"),
@@ -105,7 +105,7 @@ func TestReader_ReadAll(t *testing.T) {
 	}
 	for ae, tc := range tests {
 		t.Run(ae.String(), func(t *testing.T) {
-			have, haveErr := ReadFS(fsys, ae).ReadAll()
+			have, haveErr := ReadFS(fsys, "", ae).Environ()
 			assert.Equal(t, tc.Want, have)
 			if tc.WantErr == nil {
 				assert.NoError(t, haveErr)

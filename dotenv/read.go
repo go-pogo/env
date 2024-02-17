@@ -7,22 +7,76 @@ package dotenv
 import (
 	"github.com/go-pogo/env"
 	"github.com/go-pogo/errors"
+	"io"
 	"io/fs"
 	"os"
-	"path"
+	"path/filepath"
 )
 
 const ErrNoFilesLoaded errors.Msg = "no files loaded"
 
-var _ env.ReadCloseLookupper = (*Reader)(nil)
+var (
+	_ env.EnvironLookupper = (*Reader)(nil)
+	_ io.Closer            = (*Reader)(nil)
+)
 
 type Reader struct {
-	fsys  fs.FS
-	files []*file
-	found env.Map
+	reader
+	replacer *env.Replacer
 
 	// ReplaceVars
 	ReplaceVars bool
+}
+
+// Read reads .env files from dir depending on the provided ActiveEnvironment.
+//
+//	var cfg MyConfig
+//	dec := env.NewDecoder(dotenv.Read("./", dotenv.Development))
+//	dec.Decode(&cfg)
+func Read(dir string, ae ActiveEnvironment) *Reader {
+	return ReadFS(nil, dir, ae)
+}
+
+// ReadFS reads .env files at dir from fsys.
+func ReadFS(fsys fs.FS, dir string, ae ActiveEnvironment) *Reader {
+	r := Reader{ReplaceVars: true}
+	r.init(fsys, dir)
+	//goland:noinspection GoUnhandledErrorResult
+	defer r.Close()
+
+	if ae != "" {
+		r.files = append(r.files,
+			&file{name: ".env." + ae.String()},
+			&file{name: ".env." + ae.String() + ".local"},
+		)
+	}
+	return &r
+}
+
+var _ env.Lookupper = (*reader)(nil)
+
+type reader struct {
+	fsys  fs.FS
+	dir   string
+	files []*file
+	found env.Map
+}
+
+func (r *reader) init(fsys fs.FS, dir string) {
+	if r.files != nil {
+		return
+	}
+	if fsys == nil {
+		fsys = osFS{}
+	}
+
+	r.found = make(env.Map, 8)
+	r.fsys = fsys
+	r.dir = dir
+	r.files = []*file{
+		{name: ".env"},
+		{name: ".env.local"},
+	}
 }
 
 type file struct {
@@ -31,78 +85,54 @@ type file struct {
 	notExists bool
 }
 
-// Read reads .env files from dir depending on the provided ActiveEnvironment.
-//
-//	var cfg MyConfig
-//	env.NewDecoder(dotenv.ReadAll("./", dotenv.Development)).Decode(&cfg)
-func Read(dir string, ae ActiveEnvironment) *Reader {
-	var fsys fs.FS
-	if dir != "" {
-		fsys = os.DirFS(dir)
-	}
-
-	return ReadFS(fsys, ae)
-}
-
-// ReadFS reads .env files from fsys.
-func ReadFS(fsys fs.FS, ae ActiveEnvironment) *Reader {
-	r := Reader{ReplaceVars: true}
-	r.init(fsys)
-
-	if ae != "" {
-		r.files = append(r.files,
-			&file{name: ".env." + ae.String()},
-			&file{name: ".env." + ae.String() + ".local"},
-		)
-	}
-
-	return &r
-}
-
-func (r *Reader) init(fsys fs.FS) {
-	if r.files != nil {
-		return
-	}
-	if fsys == nil {
-		fsys = os.DirFS(getwd())
-	}
-
-	r.fsys = fsys
-	r.found = make(env.Map, 8)
-	r.files = []*file{
-		{name: ".env"},
-		{name: ".env.local"},
-	}
-}
-
-func (r *Reader) reader(f *file) (*env.FileReader, error) {
+func (r *reader) fileReader(f *file) (*env.FileReader, bool, error) {
 	if f.reader != nil || f.notExists {
-		return f.reader, nil
+		return f.reader, !f.notExists, nil
 	}
 
-	fr, err := env.OpenFS(r.fsys, f.name)
+	filename := f.name
+	if r.dir != "" {
+		filename = filepath.Join(r.dir, filename)
+	}
+
+	fr, err := env.OpenFS(r.fsys, filename)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			f.notExists = true
-			return nil, nil
+			return nil, !f.notExists, nil
 		}
-		return nil, err
+		return nil, !f.notExists, err
 	}
 
 	f.reader = fr
 	f.notExists = false
-	return f.reader, nil
+	return f.reader, !f.notExists, nil
 }
 
 func (r *Reader) Lookup(key string) (env.Value, error) {
-	r.init(nil)
+	if !r.ReplaceVars {
+		if r.replacer != nil {
+			r.replacer = nil
+		}
+		return r.reader.Lookup(key)
+	}
+
+	if r.replacer == nil {
+		r.replacer = env.NewReplacer(&r.reader)
+	}
+	return r.replacer.Lookup(key)
+}
+
+func (r *reader) Lookup(key string) (env.Value, error) {
+	r.init(nil, "")
 	if v, ok := r.found[key]; ok {
 		return v, nil
 	}
 
 	var anyLoaded bool
 	for i := len(r.files) - 1; i >= 0; i-- {
-		fr, err := r.reader(r.files[i])
+		fr, exists, err := r.fileReader(r.files[i])
+		anyLoaded = anyLoaded || exists
 		if err != nil {
 			return "", err
 		}
@@ -113,14 +143,11 @@ func (r *Reader) Lookup(key string) (env.Value, error) {
 		v, err := fr.Lookup(key)
 		if err != nil {
 			if env.IsNotFound(err) {
-				anyLoaded = true
 				continue
 			}
-
 			return v, err
-		} else {
-			return v, nil
 		}
+		return v, nil
 	}
 	if !anyLoaded {
 		return "", errors.New(ErrNoFilesLoaded)
@@ -129,13 +156,16 @@ func (r *Reader) Lookup(key string) (env.Value, error) {
 	return "", errors.New(env.ErrNotFound)
 }
 
-func (r *Reader) ReadAll() (env.Map, error) {
-	r.init(nil)
+// Environ reads and returns all environment variables from the loaded .env
+// files.
+func (r *reader) Environ() (env.Map, error) {
+	r.init(nil, "")
 	var anyLoaded bool
 
 	res := make(env.Map, 8)
 	for _, f := range r.files {
-		fr, err := r.reader(f)
+		fr, exists, err := r.fileReader(f)
+		anyLoaded = anyLoaded || exists
 		if err != nil {
 			return res, err
 		}
@@ -143,13 +173,12 @@ func (r *Reader) ReadAll() (env.Map, error) {
 			continue
 		}
 
-		m, err := fr.ReadAll()
+		m, err := fr.Environ()
 		if err != nil {
 			return nil, err
 		}
 
 		res.MergeValues(m)
-		anyLoaded = true
 	}
 	if !anyLoaded {
 		return nil, errors.New(ErrNoFilesLoaded)
@@ -159,7 +188,7 @@ func (r *Reader) ReadAll() (env.Map, error) {
 	return res, nil
 }
 
-func (r *Reader) Close() error {
+func (r *reader) Close() error {
 	var err error
 	for _, f := range r.files {
 		if f.reader != nil {
@@ -170,15 +199,9 @@ func (r *Reader) Close() error {
 	return err
 }
 
-// todo: test getwd vs "./"
-func getwd() string {
-	dir, err := os.Getwd()
-	if err != nil {
-		if dir, err = os.Executable(); err == nil {
-			dir = path.Dir(dir)
-		} else {
-			dir = "./"
-		}
-	}
-	return dir
-}
+var _ fs.FS = (*osFS)(nil)
+
+// osFS is a fs.FS compatible wrapper around os.Open.
+type osFS struct{}
+
+func (o osFS) Open(name string) (fs.File, error) { return os.Open(name) }
