@@ -69,17 +69,34 @@ func TestParseStructField(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		opts  *Options
-		field reflect.StructField
-		want  Tag
+		opts   *Options
+		field  reflect.StructField
+		prefix string
+		want   Tag
 	}{
-		"basic": {
+		"field name": {
 			field: reflect.TypeOf(fixtureBasic{}).Field(0),
 			want:  Tag{Name: "FOO"},
 		},
-		"named": {
+		"field name with prefix": {
+			field:  reflect.TypeOf(fixtureBasic{}).Field(0),
+			prefix: "PREFIX",
+			want:   Tag{Name: "PREFIX_FOO"},
+		},
+		"field name with prefix and without normalizer": {
+			opts:   &Options{Normalizer: nil},
+			field:  reflect.TypeOf(fixtureBasic{}).Field(0),
+			prefix: "PREFIX",
+			want:   Tag{Name: "PREFIX_Foo"},
+		},
+		"tag name": {
 			field: reflect.TypeOf(fixtureNamed{}).Field(0),
 			want:  Tag{Name: "BAR"},
+		},
+		"tag name with prefix": {
+			field:  reflect.TypeOf(fixtureNamed{}).Field(0),
+			prefix: "PREFIX",
+			want:   Tag{Name: "BAR"},
 		},
 		"ignore": {
 			field: reflect.TypeOf(fixtureIgnore{}).Field(0),
@@ -103,7 +120,7 @@ func TestParseStructField(t *testing.T) {
 				tc.opts = &defaultOpts
 			}
 
-			have, _ := ParseStructField(*tc.opts, tc.field, "")
+			have, _ := ParseStructField(*tc.opts, tc.field, tc.prefix)
 			assert.Equal(t, tc.want, have)
 		})
 	}
