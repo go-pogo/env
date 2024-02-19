@@ -22,15 +22,52 @@ env
 [doc-url]: https://pkg.go.dev/github.com/go-pogo/env
 
 
-Package `env`.
+Package `env` reads and parses environment variables from various sources. 
+It supports unmarshaling into any type and (over)loading the variables into the 
+system's environment.
+
+Included features are:
+* Reading environment variables from various sources;
+* Decoding environment variables into any type;
+* Encoding environment variables from any type;
+* Loading and overloading into the system's environment variables.
 
 ```sh
 go get github.com/go-pogo/env
 ```
 
-```go
+```sh
 import "github.com/go-pogo/env"
 ```
+
+## Usage
+
+```go
+package main
+
+import (
+    "github.com/go-pogo/env"
+    "log"
+    "time"
+)
+
+func main() {
+    type Config struct {
+        Foo     string
+        Timeout time.Duration `default:"10s"`
+    }
+    
+    var conf Config
+    err := env.NewDecoder(env.System()).Decode(&conf)
+    if err != nil {
+        log.Fatalln("unable to decode system environment variables:", err)
+    }
+}
+
+```
+
+## Usage with `dotenv`
+
 
 ## Documentation
 

@@ -7,10 +7,31 @@ package env
 import (
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
+	"log"
 	"net"
 	"net/url"
 	"time"
 )
+
+func ExampleDecoder_Decode() {
+	type Config struct {
+		Foo     string
+		Timeout time.Duration `default:"10s"`
+	}
+
+	var conf Config
+	err := NewDecoder(System()).Decode(&conf)
+	if err != nil {
+		log.Fatalln("unable to decode system environment variables:", err)
+	}
+
+	spew.Dump(conf)
+	// Output:
+	// (env.Config) {
+	//  Foo: (string) "",
+	//  Timeout: (time.Duration) 10s
+	// }
+}
 
 func ExampleUnmarshal() {
 	type Envs struct {
