@@ -17,12 +17,20 @@ func LoadEnv(key string, val Value) error {
 // Load sets the environment variables from the Map using Environment.Set when
 // they do not exist.
 func Load(environ Map) error {
+	if len(environ) == 0 {
+		return nil
+	}
+
 	return (&Loader{ReplaceVars: true}).Load(environ)
 }
 
 // Overload sets and overwrites the environment variables from the Map using
 // Environment.Set.
 func Overload(environ Map) error {
+	if len(environ) == 0 {
+		return nil
+	}
+
 	return (&Loader{Overload: true, ReplaceVars: true}).Load(environ)
 }
 
@@ -43,6 +51,10 @@ func NewLoader(dest Environment) *Loader {
 // Load sets the environment variables from the Map using os.Setenv when they
 // do not exist.
 func (l *Loader) Load(m Map) error {
+	if len(m) == 0 {
+		return nil
+	}
+
 	if l.environ == nil {
 		l.environ = environ
 	}
