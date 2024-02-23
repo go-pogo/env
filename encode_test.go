@@ -16,6 +16,20 @@ import (
 	"time"
 )
 
+func TestNewEncoder(t *testing.T) {
+	t.Run("nil writer", func(t *testing.T) {
+		assert.PanicsWithValue(t, panicNilWriter, func() { NewEncoder(nil) })
+	})
+}
+
+func TestEncoder_WithWriter(t *testing.T) {
+	t.Run("nil writer", func(t *testing.T) {
+		assert.PanicsWithValue(t, panicNilWriter, func() {
+			NewEncoder(&bytes.Buffer{}).WithWriter(nil)
+		})
+	})
+}
+
 func TestEncoder(t *testing.T) {
 	type fixtureBasic struct {
 		Foo        string `env:"FOO" default:"bar"`

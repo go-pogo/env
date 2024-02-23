@@ -11,6 +11,45 @@ import (
 	"time"
 )
 
+func TestMap_Set(t *testing.T) {
+	m := make(Map, 1)
+	m.Set("foo", "bar")
+	assert.Len(t, m, 1)
+	assert.Equal(t, Value("bar"), m["foo"])
+}
+
+func TestMap_Get(t *testing.T) {
+	t.Run("found", func(t *testing.T) {
+		assert.Equal(t, Value("bar"), Map{"foo": "bar"}.Get("foo"))
+	})
+	t.Run("not found", func(t *testing.T) {
+		assert.Equal(t, Value(""), Map{}.Get("foo"))
+	})
+}
+
+func TestMap_Has(t *testing.T) {
+	t.Run("found", func(t *testing.T) {
+		assert.True(t, Map{"foo": ""}.Has("foo"))
+	})
+	t.Run("not found", func(t *testing.T) {
+		assert.False(t, Map{}.Has("foo"))
+	})
+}
+
+func TestMap_Lookup(t *testing.T) {
+	m := Map{"foo": "bar"}
+	t.Run("found", func(t *testing.T) {
+		haveVal, haveErr := m.Lookup("foo")
+		assert.NoError(t, haveErr)
+		assert.Equal(t, Value("bar"), haveVal)
+	})
+	t.Run("not found", func(t *testing.T) {
+		haveVal, haveErr := m.Lookup("bar")
+		assert.ErrorIs(t, haveErr, ErrNotFound)
+		assert.Equal(t, Value(""), haveVal)
+	})
+}
+
 func TestMap_Merge(t *testing.T) {
 	tests := map[string]struct {
 		env   Map
@@ -46,18 +85,15 @@ func TestMap_Merge(t *testing.T) {
 	}
 }
 
-func TestMap_Lookup(t *testing.T) {
-	m := Map{"foo": "bar"}
-	t.Run("found", func(t *testing.T) {
-		haveVal, haveErr := m.Lookup("foo")
-		assert.NoError(t, haveErr)
-		assert.Equal(t, Value("bar"), haveVal)
-	})
-	t.Run("not found", func(t *testing.T) {
-		haveVal, haveErr := m.Lookup("bar")
-		assert.ErrorIs(t, haveErr, ErrNotFound)
-		assert.Equal(t, Value(""), haveVal)
-	})
+func TestMap_Clone(t *testing.T) {
+	src := Map{"foo": "bar", "bar": "baz"}
+	clone := src.Clone()
+
+	assert.Equal(t, src, clone)
+	assert.NotSame(t, src, clone)
+
+	src["foo"] = "qux"
+	assert.Equal(t, Value("bar"), clone["foo"])
 }
 
 func randKey() string {

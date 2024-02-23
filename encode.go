@@ -60,12 +60,12 @@ type Encoder struct {
 	ExportPrefix bool
 }
 
+const panicNilWriter = "env.Encoder: io.Writer must not be nil"
+
 // NewEncoder returns a new encoder that writes to w.
 func NewEncoder(w io.Writer) *Encoder {
-	return &Encoder{
-		Options: envtag.DefaultOptions(),
-		w:       writing.ToStringWriter(w),
-	}
+	var enc Encoder
+	return enc.WithOptions(envtag.DefaultOptions()).WithWriter(w)
 }
 
 func (e *Encoder) WithOptions(opts envtag.Options) *Encoder {
@@ -73,8 +73,11 @@ func (e *Encoder) WithOptions(opts envtag.Options) *Encoder {
 	return e
 }
 
-func (e *Encoder) WithWriter(w io.Writer) *Encoder {
-	e.w = writing.ToStringWriter(w)
+func (e *Encoder) WithWriter(writer io.Writer) *Encoder {
+	if writer == nil {
+		panic(panicNilWriter)
+	}
+	e.w = writing.ToStringWriter(writer)
 	return e
 }
 
