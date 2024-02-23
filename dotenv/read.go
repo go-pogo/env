@@ -6,6 +6,7 @@ package dotenv
 
 import (
 	"github.com/go-pogo/env"
+	"github.com/go-pogo/env/envfile"
 	"github.com/go-pogo/errors"
 	"io"
 	"io/fs"
@@ -81,11 +82,11 @@ func (r *reader) init(fsys fs.FS, dir string) {
 
 type file struct {
 	name      string
-	reader    *env.FileReader
+	reader    *envfile.Reader
 	notExists bool
 }
 
-func (r *reader) fileReader(f *file) (*env.FileReader, bool, error) {
+func (r *reader) fileReader(f *file) (*envfile.Reader, bool, error) {
 	if f.reader != nil || f.notExists {
 		return f.reader, !f.notExists, nil
 	}
@@ -95,7 +96,7 @@ func (r *reader) fileReader(f *file) (*env.FileReader, bool, error) {
 		filename = filepath.Join(r.dir, filename)
 	}
 
-	fr, err := env.OpenFS(r.fsys, filename)
+	fr, err := envfile.OpenFS(r.fsys, filename)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			f.notExists = true

@@ -28,7 +28,7 @@ type Unmarshaler interface {
 // pointed to by v. If v is nil or not a pointer, Unmarshal returns an
 // ErrStructPointerExpected error.
 func Unmarshal(data []byte, v any) error {
-	return NewDecoder(NewReader(bytes.NewReader(data))).Decode(v)
+	return NewReaderDecoder(bytes.NewReader(data)).Decode(v)
 }
 
 type Decoder struct {
