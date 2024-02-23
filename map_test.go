@@ -13,7 +13,7 @@ import (
 
 func TestMap_Set(t *testing.T) {
 	m := make(Map, 1)
-	m.Set("foo", "bar")
+	assert.NoError(t, m.Set("foo", "bar"))
 	assert.Len(t, m, 1)
 	assert.Equal(t, Value("bar"), m["foo"])
 }

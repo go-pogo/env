@@ -211,7 +211,7 @@ func TestDecoder_Decode(t *testing.T) {
 				Foo    string
 				Ignore bool
 			}
-			dec.Decode(&dest)
+			_ = dec.Decode(&dest)
 		})
 	})
 }
