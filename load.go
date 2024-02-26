@@ -50,7 +50,7 @@ func load(envs Map, environ Environment, overload bool) error {
 
 func predictReplacerNeed(m Map) bool {
 	for _, v := range m {
-		if strings.IndexRune(v.String(), '$') >= 0 {
+		if strings.ContainsRune(v.String(), '$') {
 			return true
 		}
 	}
