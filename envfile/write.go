@@ -31,7 +31,7 @@ func NewEncoder(f *os.File) *Encoder {
 }
 
 func Create(filename string) (*Encoder, error) {
-	f, err := os.Open(filename)
+	f, err := os.Create(filename)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
