@@ -163,7 +163,7 @@ func TestParse(t *testing.T) {
 
 					assert.Exactly(t, tc.want, have.Value, "parsing `"+input+"` failed")
 					if tc.wantErr == nil {
-						assert.Nil(t, haveErr)
+						assert.NoError(t, haveErr)
 					} else {
 						assert.ErrorIs(t, haveErr, tc.wantErr)
 					}

@@ -5,9 +5,9 @@
 package env
 
 import (
-	"bytes"
 	"github.com/go-pogo/env/envtag"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"math"
 	"net/url"
 	"strconv"
@@ -25,21 +25,14 @@ func TestNewEncoder(t *testing.T) {
 func TestEncoder_WithWriter(t *testing.T) {
 	t.Run("nil writer", func(t *testing.T) {
 		assert.PanicsWithValue(t, panicNilWriter, func() {
-			NewEncoder(&bytes.Buffer{}).WithWriter(nil)
+			NewEncoder(&strings.Builder{}).WithWriter(nil)
 		})
 	})
 }
 
 func TestEncoder(t *testing.T) {
-	type fixtureBasic struct {
-		Foo        string `env:"FOO" default:"bar"`
-		unexported bool   `env:"NOPE"` //nolint:golint,unused
-	}
-
-	type fixtureNested struct {
-		Qux    string
-		Nested fixtureBasic
-	}
+	urlInput, err := url.Parse("https://example.com")
+	require.NoError(t, err)
 
 	tests := map[string]struct {
 		setup func(enc *Encoder)
@@ -57,16 +50,13 @@ func TestEncoder(t *testing.T) {
 			},
 		},
 		"map": {
-			setup: func(enc *Encoder) {
-				enc.ExportPrefix = true
-			},
 			input: map[string]Value{
 				`foo`: `${bar}`,
 				`qux`: `"xoo"`,
 			},
 			want: []string{
-				`export foo=${bar}`,
-				`export qux='"xoo"'`,
+				`foo=${bar}`,
+				`qux='"xoo"'`,
 			},
 		},
 		"NamedValues": {
@@ -87,24 +77,48 @@ func TestEncoder(t *testing.T) {
 				`FOO="bar'n \"boos\""`,
 			},
 		},
-		"struct": {
-			input: fixtureBasic{Foo: "foobar"},
-			want: []string{
-				`FOO=bar`,
-			},
+
+		// basic types as fields
+		"bool": {
+			setup: takeValues,
+			input: struct{ Any bool }{Any: true},
+			want:  []string{"ANY=true"},
 		},
-		"nested struct": {
-			input: fixtureNested{Qux: "x00"},
-			want: []string{
-				`QUX=`,
-				`FOO=bar`,
-			},
+		"int": {
+			setup: takeValues,
+			input: struct{ Any int }{Any: -123},
+			want:  []string{"ANY=-123"},
+		},
+		"uint": {
+			setup: takeValues,
+			input: struct{ Any uint }{Any: 123},
+			want:  []string{"ANY=123"},
+		},
+		"float": {
+			setup: takeValues,
+			input: struct{ Any float64 }{Any: math.Pi},
+			want:  []string{"ANY=" + strconv.FormatFloat(math.Pi, 'g', -1, 64)},
+		},
+		"string": {
+			setup: takeValues,
+			input: struct{ Any string }{Any: "foo"},
+			want:  []string{"ANY=foo"},
+		},
+		"url": {
+			setup: takeValues,
+			input: struct{ Any *url.URL }{Any: urlInput},
+			want:  []string{"ANY=https://example.com"},
+		},
+		"duration": {
+			setup: takeValues,
+			input: struct{ Any time.Duration }{Any: time.Second + (time.Minute * 3)},
+			want:  []string{"ANY=3m1s"},
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var buf bytes.Buffer
+			var buf strings.Builder
 			enc := NewEncoder(&buf)
 			if tc.setup != nil {
 				tc.setup(enc)
@@ -115,69 +129,52 @@ func TestEncoder(t *testing.T) {
 		})
 	}
 
-	typeTests := map[string]struct {
-		exec func(enc *Encoder) error
-		want string
-	}{
-		"bool": {
-			exec: func(enc *Encoder) error {
-				return enc.Encode(struct{ Any bool }{Any: true})
-			},
-			want: "true",
-		},
-		"int": {
-			exec: func(enc *Encoder) error {
-				return enc.Encode(struct{ Any int }{Any: -123})
-			},
-			want: "-123",
-		},
-		"uint": {
-			exec: func(enc *Encoder) error {
-				return enc.Encode(struct{ Any uint }{Any: 123})
-			},
-			want: "123",
-		},
-		"float": {
-			exec: func(enc *Encoder) error {
-				return enc.Encode(struct{ Any float64 }{Any: math.Pi})
-			},
-			want: strconv.FormatFloat(math.Pi, 'g', -1, 64),
-		},
-		"string": {
-			exec: func(enc *Encoder) error {
-				return enc.Encode(struct{ Any string }{Any: "foo"})
-			},
-			want: "foo",
-		},
-		"url": {
-			exec: func(enc *Encoder) error {
-				u, err := url.Parse("https://example.com")
-				if err != nil {
-					panic(err)
-				}
-				return enc.Encode(struct{ Any *url.URL }{Any: u})
-			},
-			want: "https://example.com",
-		},
-		"duration": {
-			exec: func(enc *Encoder) error {
-				return enc.Encode(struct{ Any time.Duration }{Any: time.Second + (time.Minute * 3)})
-			},
-			want: "3m1s",
-		},
-	}
-
-	t.Run("TakeValues", func(t *testing.T) {
-		for name, tc := range typeTests {
-			t.Run(name, func(t *testing.T) {
-				var buf bytes.Buffer
-				enc := NewEncoder(&buf)
-				enc.TakeValues = true
-
-				assert.NoError(t, tc.exec(enc))
-				assert.Equal(t, "ANY="+tc.want+"\n", buf.String())
-			})
+	t.Run("struct", func(t *testing.T) {
+		type subj struct {
+			Foo        string `default:"bar"`
+			Flag       bool   `default:"true"`
+			unexported bool   //nolint:golint,unused
 		}
+
+		t.Run("default", func(t *testing.T) {
+			var buf strings.Builder
+			enc := NewEncoder(&buf)
+
+			assert.NoError(t, enc.Encode(subj{Foo: "foobar"}))
+			assertSimilarOutput(t, buf.String(), []string{
+				`FOO=bar`,
+				`FLAG=true`,
+			})
+		})
+		t.Run("take values", func(t *testing.T) {
+			var buf strings.Builder
+			enc := NewEncoder(&buf)
+			enc.TakeValues = true
+
+			assert.NoError(t, enc.Encode(subj{Foo: "foobar"}))
+			assertSimilarOutput(t, buf.String(), []string{
+				`FOO=foobar`,
+				`FLAG=true`,
+			})
+		})
+	})
+
+	t.Run("nested struct", func(t *testing.T) {
+		type nested struct {
+			Foo        string `env:"FOO" default:"bar"`
+			unexported bool   `env:"NOPE"` //nolint:golint,unused
+		}
+		type subj struct {
+			Qux    string
+			Nested nested
+		}
+
+		var buf strings.Builder
+		assert.NoError(t, NewEncoder(&buf).Encode(subj{Qux: "x00"}))
+		assertSimilarOutput(t, buf.String(), []string{
+			`QUX=`,
+			`FOO=bar`,
+		})
 	})
 }
 
@@ -186,4 +183,8 @@ func assertSimilarOutput(t *testing.T, have string, want []string) {
 	for _, line := range want {
 		assert.Contains(t, have, line)
 	}
+}
+
+func takeValues(enc *Encoder) {
+	enc.TakeValues = true
 }

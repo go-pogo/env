@@ -10,12 +10,6 @@ import (
 	"testing"
 )
 
-func testEnviron() Environment {
-	environ = make(Map)
-	return environ
-}
-func resetEnviron() { environ = System() }
-
 func TestSetenv(t *testing.T) {
 	t.Run("err", func(t *testing.T) {
 		wantErr := os.Setenv("", "foobar")
