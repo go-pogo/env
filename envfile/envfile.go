@@ -4,4 +4,7 @@
 
 package envfile
 
-const panicNilFile = "envfile: file must not be nil"
+const (
+	panicNilFile = "envfile: file must not be nil"
+	panicNilFsys = "envfile: fs.FS must not be nil"
+)

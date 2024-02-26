@@ -6,28 +6,37 @@ package envfile
 
 import (
 	"github.com/go-pogo/env"
+	"github.com/go-pogo/env/internal/osfs"
 	"io/fs"
 )
 
 // Load reads from filename and sets the environment variables using env.Load.
 func Load(filename string) error {
-	return readAndLoad(nil, filename, env.Load)
+	return readAndLoad(osfs.FS{}, filename, env.Load)
 }
 
 // Overload reads from filename and sets and overwrites the environment
 // variables using env.Overload.
 func Overload(filename string) error {
-	return readAndLoad(nil, filename, env.Overload)
+	return readAndLoad(osfs.FS{}, filename, env.Overload)
 }
 
 // LoadFS reads from filename and sets the environment variables using env.Load.
 func LoadFS(fsys fs.FS, filename string) error {
+	if fsys == nil {
+		panic(panicNilFsys)
+	}
+
 	return readAndLoad(fsys, filename, env.Load)
 }
 
 // OverloadFS reads from filename and sets and overwrites the environment
 // variables using env.Overload.
 func OverloadFS(fsys fs.FS, filename string) error {
+	if fsys == nil {
+		panic(panicNilFsys)
+	}
+
 	return readAndLoad(fsys, filename, env.Overload)
 }
 

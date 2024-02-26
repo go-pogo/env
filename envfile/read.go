@@ -6,10 +6,10 @@ package envfile
 
 import (
 	"github.com/go-pogo/env"
+	"github.com/go-pogo/env/internal/osfs"
 	"github.com/go-pogo/errors"
 	"io"
 	"io/fs"
-	"os"
 )
 
 var (
@@ -43,13 +43,17 @@ func NewReader(f fs.File) *Reader {
 // It is the caller's responsibility to close the Reader when finished.
 // If there is an error, it will be of type *os.PathError.
 func Open(filename string) (*Reader, error) {
-	return OpenFS(osFS{}, filename)
+	return OpenFS(osfs.FS{}, filename)
 }
 
 // OpenFS opens filename for reading from fsys and returns a new *Reader.
 // It is the caller's responsibility to close the Reader when finished.
 // If there is an error, it will be of type *os.PathError.
 func OpenFS(fsys fs.FS, filename string) (*Reader, error) {
+	if fsys == nil {
+		panic(panicNilFsys)
+	}
+
 	f, err := fsys.Open(filename)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -61,10 +65,3 @@ func OpenFS(fsys fs.FS, filename string) (*Reader, error) {
 func (f *Reader) Close() error {
 	return errors.WithStack(f.file.Close())
 }
-
-var _ fs.FS = (*osFS)(nil)
-
-// osFS is a fs.FS compatible wrapper around os.Open.
-type osFS struct{}
-
-func (o osFS) Open(name string) (fs.File, error) { return os.Open(name) }
