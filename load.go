@@ -4,81 +4,55 @@
 
 package env
 
-// LoadEnv sets the environment variable named by key if it does not exist.
-// Note: An OverloadEnv function does not exist, because its functionality would
-// be the same as Setenv.
-func LoadEnv(key string, val Value) error {
-	if environ.Has(key) {
-		return nil
-	}
-	return environ.Set(key, val)
-}
+import "strings"
 
-// Load sets the environment variables from the Map using Environment.Set when
+// Load sets the system's environment variables with those from the Map when
 // they do not exist.
-func Load(environ Map) error {
-	if len(environ) == 0 {
+func Load(envs Map) error {
+	return load(envs, environ, false)
+}
+
+// Overload sets and overwrites the system's environment variables with those
+// from the Map.
+func Overload(envs Map) error {
+	return load(envs, environ, true)
+}
+
+func load(envs Map, environ Environment, overload bool) error {
+	if len(envs) == 0 {
 		return nil
 	}
 
-	return (&Loader{ReplaceVars: true}).Load(environ)
-}
-
-// Overload sets and overwrites the environment variables from the Map using
-// Environment.Set.
-func Overload(environ Map) error {
-	if len(environ) == 0 {
-		return nil
+	var r *Replacer
+	if predictReplacerNeed(envs) {
+		r = NewReplacer(Chain(envs, environ))
 	}
 
-	return (&Loader{Overload: true, ReplaceVars: true}).Load(environ)
-}
-
-type Loader struct {
-	environ Environment
-
-	Overload    bool
-	ReplaceVars bool
-}
-
-func NewLoader(dest Environment) *Loader {
-	return &Loader{
-		environ:     dest,
-		ReplaceVars: true,
-	}
-}
-
-// Load sets the environment variables from the Map using os.Setenv when they
-// do not exist.
-func (l *Loader) Load(m Map) error {
-	if len(m) == 0 {
-		return nil
-	}
-
-	if l.environ == nil {
-		l.environ = environ
-	}
-
-	var lookupper Lookupper = m
-	if l.ReplaceVars {
-		lookupper = NewReplacer(Chain(m, l.environ))
-	}
-
-	for k := range m {
-		if !l.Overload && l.environ.Has(k) {
+	for k, v := range envs {
+		if !overload && environ.Has(k) {
 			continue
 		}
 
-		v, err := lookupper.Lookup(k)
-		if err != nil {
-			if !IsNotFound(err) {
+		if r != nil {
+			var err error
+			v, err = r.Replace(v)
+			if err != nil {
 				return err
 			}
-			continue
 		}
-		if err = l.environ.Set(k, v); err != nil {
+
+		if err := environ.Set(k, v); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func predictReplacerNeed(m Map) bool {
+	for _, v := range m {
+		if strings.IndexRune(v.String(), '$') >= 0 {
+			return true
+		}
+	}
+	return false
 }
