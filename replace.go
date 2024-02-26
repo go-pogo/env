@@ -49,6 +49,7 @@ func NewReplacer(l Lookupper) *Replacer {
 	}
 }
 
+// Unwrap returns the original Lookupper that was wrapped by the Replacer.
 func (r *Replacer) Unwrap() Lookupper { return r.lookupper }
 
 func (r *Replacer) Lookup(k string) (Value, error) {
@@ -60,28 +61,46 @@ func (r *Replacer) Lookup(k string) (Value, error) {
 	if err != nil {
 		return v, err
 	}
+	if err = r.handle(k, v); err != nil {
+		return "", err
+	}
 
-	err = r.handle(k, v)
-	return r.result[k], err
+	return r.result[k], nil
 }
-
-const chars = `[a-zA-Z0-9_-]+`
-
-var matcher = regexp.MustCompile(`\$(` + chars + `|\{` + chars + `(:-.*)?\})`)
 
 func (r *Replacer) handle(k string, v Value) error {
 	if contains(r.stack, k) {
 		return errors.New(ErrCircularDependency)
 	}
 
+	v, err := r.replace(k, v)
+	if err != nil {
+		return err
+	}
+
+	r.result[k] = v
+	return nil
+}
+
+func (r *Replacer) Replace(v Value) (Value, error) { return r.replace("", v) }
+
+const chars = `[a-zA-Z0-9_-]+`
+
+var matcher = regexp.MustCompile(`\$(` + chars + `|\{` + chars + `(:-.*)?\})`)
+
+func (r *Replacer) replace(k string, v Value) (Value, error) {
 	val := v.String()
 	matches := matcher.FindAllStringSubmatchIndex(val, -1)
 	if matches == nil {
-		r.result[k] = v
-		return nil
+		return v, nil
 	}
 
-	r.stack = append(r.stack, k)
+	if k != "" {
+		r.stack = append(r.stack, k)
+		defer func() {
+			r.stack = r.stack[:len(r.stack)-1]
+		}()
+	}
 
 	var offset int
 	for _, m := range matches {
@@ -96,7 +115,7 @@ func (r *Replacer) handle(k string, v Value) error {
 		var repl string
 		if v, err := r.Lookup(lookup); err != nil {
 			if !IsNotFound(err) {
-				return err
+				return v, err
 			}
 			if !bash || m[4] < 0 {
 				// no bash style default value set
@@ -112,10 +131,7 @@ func (r *Replacer) handle(k string, v Value) error {
 		offset += len(repl) - (m[1] - m[0])
 	}
 
-	r.stack = r.stack[:len(r.stack)-1]
-	r.result[k] = Value(val)
-
-	return nil
+	return Value(val), nil
 }
 
 func contains(list []string, str string) bool {
