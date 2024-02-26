@@ -52,8 +52,8 @@ func (m Map) MergeValues(src map[string]Value) {
 	}
 }
 
-// Clone returns a copy of the Map.
-func (m Map) Clone() Map {
+// Environ returns a copy of the Map.
+func (m Map) Environ() Map {
 	clone := make(Map, len(m))
 	clone.MergeValues(m)
 	return clone

@@ -87,7 +87,7 @@ func TestMap_Merge(t *testing.T) {
 
 func TestMap_Clone(t *testing.T) {
 	src := Map{"foo": "bar", "bar": "baz"}
-	clone := src.Clone()
+	clone := src.Environ()
 
 	assert.Equal(t, src, clone)
 	assert.NotSame(t, src, clone)
