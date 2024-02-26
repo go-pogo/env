@@ -31,12 +31,16 @@ func Unmarshal(data []byte, v any) error {
 	return NewReaderDecoder(bytes.NewReader(data)).Decode(v)
 }
 
-type Decoder struct {
-	envtag.Options
-	lookupper Lookupper
-
+type DecodeOptions struct {
 	// ReplaceVars
 	ReplaceVars bool
+}
+
+type Decoder struct {
+	DecodeOptions
+	TagOptions
+
+	lookupper Lookupper
 }
 
 const panicNilLookupper = "env.Decoder: Lookupper must not be nil"
@@ -51,26 +55,22 @@ func NewDecoder(src ...Lookupper) *Decoder {
 		panic(panicNilLookupper)
 	}
 
-	return &Decoder{
-		lookupper:   l,
-		Options:     envtag.DefaultOptions(),
-		ReplaceVars: true,
-	}
+	return (&Decoder{lookupper: l}).
+		WithOptions(DecodeOptions{ReplaceVars: true}).
+		WithTagOptions(envtag.DefaultOptions())
 }
 
 // NewReaderDecoder returns a new Decoder similar to calling NewDecoder with
 // NewReader as argument.
 func NewReaderDecoder(r io.Reader) *Decoder {
-	return &Decoder{
-		lookupper:   NewReader(r),
-		Options:     envtag.DefaultOptions(),
-		ReplaceVars: true,
-	}
+	return (&Decoder{lookupper: NewReader(r)}).
+		WithOptions(DecodeOptions{ReplaceVars: true}).
+		WithTagOptions(envtag.DefaultOptions())
 }
 
 // Strict sets the StrictTags option to true.
 func (d *Decoder) Strict() *Decoder {
-	d.Options.StrictTags = true
+	d.TagOptions.StrictTags = true
 	return d
 }
 
@@ -84,8 +84,13 @@ func (d *Decoder) WithLookupper(l Lookupper) *Decoder {
 	return d
 }
 
-func (d *Decoder) WithOptions(opts envtag.Options) *Decoder {
-	d.Options = opts
+func (d *Decoder) WithOptions(opts DecodeOptions) *Decoder {
+	d.DecodeOptions = opts
+	return d
+}
+
+func (d *Decoder) WithTagOptions(opts TagOptions) *Decoder {
+	d.TagOptions = opts
 	return d
 }
 
@@ -109,7 +114,7 @@ func (d *Decoder) Decode(v any) error {
 	}
 
 	return (&traverser{
-		Options:     d.Options,
+		TagOptions:  d.TagOptions,
 		isTypeKnown: typeKnownByUnmarshaler,
 		handleField: d.decodeField,
 	}).start(rv)

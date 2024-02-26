@@ -34,15 +34,19 @@ func Marshal(v any) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// An Encoder writes env values to an output stream.
-type Encoder struct {
-	envtag.Options
-	w writing.StringWriter
-
+type EncodeOptions struct {
 	// TakeValues takes the values from the struct field.
 	TakeValues bool
 	// ExportPrefix adds an export prefix to each relevant line.
 	ExportPrefix bool
+}
+
+// An Encoder writes env values to an output stream.
+type Encoder struct {
+	EncodeOptions
+	TagOptions
+
+	w writing.StringWriter
 }
 
 const panicNilWriter = "env.Encoder: io.Writer must not be nil"
@@ -50,11 +54,16 @@ const panicNilWriter = "env.Encoder: io.Writer must not be nil"
 // NewEncoder returns a new encoder that writes to w.
 func NewEncoder(w io.Writer) *Encoder {
 	var enc Encoder
-	return enc.WithOptions(envtag.DefaultOptions()).WithWriter(w)
+	return enc.WithTagOptions(envtag.DefaultOptions()).WithWriter(w)
 }
 
-func (e *Encoder) WithOptions(opts envtag.Options) *Encoder {
-	e.Options = opts
+func (e *Encoder) WithOptions(opts EncodeOptions) *Encoder {
+	e.EncodeOptions = opts
+	return e
+}
+
+func (e *Encoder) WithTagOptions(opts TagOptions) *Encoder {
+	e.TagOptions = opts
 	return e
 }
 
@@ -106,20 +115,24 @@ func (e *Encoder) Encode(v any) error {
 		}
 
 		return (&traverser{
-			Options:     e.Options,
+			TagOptions:  e.TagOptions,
 			isTypeKnown: typeKnownByMarshaler,
 			handleField: e.encodeField,
 		}).start(rv)
 	}
 }
 
-func (e *Encoder) encodeField(rv reflect.Value, tag envtag.Tag) error {
+func (e *Encoder) encodeField(rv reflect.Value, tag envtag.Tag) (err error) {
 	val := tag.Default
-	if e.TakeValues {
-		if v, err := marshaler.Marshal(rv); err != nil {
+	if e.TakeValues && !rv.IsZero() {
+		val, err = marshalAndQuote(rv)
+		if err != nil {
 			return err
-		} else if !v.IsEmpty() {
-			val = quote(v.String())
+		}
+	} else if !e.TakeValues && val == "" {
+		val, err = marshalAndQuote(reflect.New(rv.Type()).Elem())
+		if err != nil {
+			return err
 		}
 	}
 
@@ -140,6 +153,14 @@ func (e *Encoder) writeKeyValue(key, val string) {
 
 func (e *Encoder) writeKeyValueQuoted(key, val string) {
 	e.writeKeyValue(key, quote(val))
+}
+
+func marshalAndQuote(rv reflect.Value) (string, error) {
+	v, err := marshaler.Marshal(rv)
+	if err != nil {
+		return "", err
+	}
+	return quote(v.String()), nil
 }
 
 func quote(str string) string {

@@ -38,8 +38,10 @@ func typeKnownByMarshaler(typ reflect.Type) bool {
 	return marshaler.Func(typ) != nil
 }
 
+type TagOptions = envtag.Options
+
 type traverser struct {
-	envtag.Options
+	TagOptions
 
 	isTypeKnown func(reflect.Type) bool
 	handleField func(reflect.Value, envtag.Tag) error
@@ -66,7 +68,7 @@ func (t *traverser) traverse(pv reflect.Value, prefix string, include bool) erro
 			panic(panicPtr)
 		}
 
-		opts := t.Options
+		opts := t.TagOptions
 		opts.StrictTags = opts.StrictTags && !include
 
 		tag, _ := envtag.ParseStructField(opts, field, prefix)
