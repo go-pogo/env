@@ -69,7 +69,7 @@ func TestGetActiveEnvironment(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			argsLen := len(tc.args)
-			haveEnv, haveRemain := GetActiveEnvironment(tc.args...)
+			haveEnv, haveRemain := GetActiveEnvironment(tc.args)
 			assert.Equal(t, tc.wantEnv, haveEnv)
 			assert.Equal(t, tc.wantRemain, haveRemain)
 			assert.Len(t, tc.args, argsLen, "args length should not change")

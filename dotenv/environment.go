@@ -30,7 +30,7 @@ func (ae ActiveEnvironment) String() string { return string(ae) }
 //
 //	args := os.Args[1:]
 //	env, args := dotenv.GetActiveEnvironment(args...)
-func GetActiveEnvironment(args ...string) (ActiveEnvironment, []string) {
+func GetActiveEnvironment(args []string) (ActiveEnvironment, []string) {
 	const flag1a = flag1 + "="
 	const flag2a = flag2 + "="
 	const flag1b = len(flag1a)
@@ -59,4 +59,12 @@ func GetActiveEnvironment(args ...string) (ActiveEnvironment, []string) {
 	}
 
 	return None, args
+}
+
+func GetActiveEnvironmentOr(args []string, def ActiveEnvironment) (ActiveEnvironment, []string) {
+	ae, args := GetActiveEnvironment(args)
+	if ae == None {
+		ae = def
+	}
+	return ae, args
 }
