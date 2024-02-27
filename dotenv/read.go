@@ -17,8 +17,8 @@ import (
 const ErrNoFilesLoaded errors.Msg = "no files loaded"
 
 var (
-	_ env.EnvironLookupper = (*Reader)(nil)
-	_ io.Closer            = (*Reader)(nil)
+	_ env.EnvironmentLookupper = (*Reader)(nil)
+	_ io.Closer                = (*Reader)(nil)
 )
 
 type Reader struct {

@@ -6,6 +6,7 @@ package envfile
 
 import (
 	"github.com/go-pogo/env"
+	"github.com/go-pogo/env/envtest"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"testing/fstest"
@@ -22,13 +23,12 @@ func TestLoadFS(t *testing.T) {
 	})
 
 	t.Run("load", func(t *testing.T) {
-		have := env.Map{"QUX": "x00"}
-		env.Use(have)
-		defer env.Use(env.System())
+		envs := envtest.Prepare(env.Map{"QUX": "x00"})
+		defer envs.Restore()
 
 		fsys := fstest.MapFS{"x": {Data: []byte("FOO=bar\nQUX=nop")}}
 		assert.NoError(t, LoadFS(fsys, "x"))
-		assert.Equal(t, env.Map{"FOO": "bar", "QUX": "x00"}, have)
+		assert.Equal(t, env.Map{"FOO": "bar", "QUX": "x00"}, env.Environ())
 	})
 }
 
@@ -43,12 +43,11 @@ func TestOverloadFS(t *testing.T) {
 	})
 
 	t.Run("overload", func(t *testing.T) {
-		have := env.Map{"QUX": "x00"}
-		env.Use(have)
-		defer env.Use(env.System())
+		envs := envtest.Prepare(env.Map{"QUX": "x00"})
+		defer envs.Restore()
 
 		fsys := fstest.MapFS{"y": {Data: []byte("FOO=bar\nQUX=overload")}}
 		assert.NoError(t, OverloadFS(fsys, "y"))
-		assert.Equal(t, env.Map{"FOO": "bar", "QUX": "overload"}, have)
+		assert.Equal(t, env.Map{"FOO": "bar", "QUX": "overload"}, env.Environ())
 	})
 }

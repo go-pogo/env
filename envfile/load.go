@@ -40,14 +40,10 @@ func OverloadFS(fsys fs.FS, filename string) error {
 	return readAndLoad(fsys, filename, env.Overload)
 }
 
-func readAndLoad(fsys fs.FS, filename string, loadFn func(env.Map) error) error {
+func readAndLoad(fsys fs.FS, filename string, loadFn func(env.Environment) error) error {
 	r, err := OpenFS(fsys, filename)
 	if err != nil {
 		return err
 	}
-	environ, err := r.Environ()
-	if err != nil {
-		return err
-	}
-	return loadFn(environ)
+	return loadFn(r)
 }

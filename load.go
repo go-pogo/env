@@ -4,44 +4,53 @@
 
 package env
 
-import "strings"
+import (
+	"github.com/go-pogo/errors"
+	"strings"
+)
 
 // Load sets the system's environment variables with those from the Map when
 // they do not exist.
-func Load(envs Map) error {
-	return load(envs, environ, false)
+func Load(envs Environment) error {
+	return load(envs, false)
 }
 
 // Overload sets and overwrites the system's environment variables with those
 // from the Map.
-func Overload(envs Map) error {
-	return load(envs, environ, true)
+func Overload(envs Environment) error {
+	return load(envs, true)
 }
 
-func load(envs Map, environ Environment, overload bool) error {
-	if len(envs) == 0 {
+func load(envs Environment, overload bool) (err error) {
+	var m Map
+	if em, ok := envs.(Map); ok {
+		m = em
+	} else if m, err = envs.Environ(); err != nil {
+		return errors.WithStack(err)
+	}
+
+	if len(m) == 0 {
 		return nil
 	}
 
 	var r *Replacer
-	if predictReplacerNeed(envs) {
-		r = NewReplacer(Chain(envs, environ))
+	if predictReplacerNeed(m) {
+		r = NewReplacer(Chain(m, System()))
 	}
 
-	for k, v := range envs {
-		if !overload && environ.Has(k) {
+	for k, v := range m {
+		if _, has := LookupEnv(k); has && !overload {
 			continue
 		}
 
 		if r != nil {
-			var err error
 			v, err = r.Replace(v)
 			if err != nil {
 				return err
 			}
 		}
 
-		if err := environ.Set(k, v); err != nil {
+		if err = Setenv(k, v); err != nil {
 			return err
 		}
 	}

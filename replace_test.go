@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestReplaceVars(t *testing.T) {
+func TestReplaceAll(t *testing.T) {
 	tests := map[string]struct {
 		input   Map
 		want    Map

@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	_ env.EnvironLookupper = (*Reader)(nil)
-	_ io.Closer            = (*Reader)(nil)
+	_ env.EnvironmentLookupper = (*Reader)(nil)
+	_ io.Closer                = (*Reader)(nil)
 )
 
 // reader prevents Reader from needing to have a public *Reader

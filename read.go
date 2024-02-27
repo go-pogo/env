@@ -9,13 +9,17 @@ import (
 	"io"
 )
 
-// EnvironLookupper reads environment variables from any source.
-type EnvironLookupper interface {
-	Lookupper
+// Environment provides a Map of keys and values representing the environment.
+type Environment interface {
 	Environ() (Map, error)
 }
 
-var _ EnvironLookupper = (*Reader)(nil)
+type EnvironmentLookupper interface {
+	Lookupper
+	Environment
+}
+
+var _ EnvironmentLookupper = (*Reader)(nil)
 
 type Reader struct {
 	scanner *Scanner

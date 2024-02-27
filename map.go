@@ -8,22 +8,10 @@ import (
 	"github.com/go-pogo/errors"
 )
 
-var _ Environment = (Map)(nil)
+var _ EnvironmentLookupper = (Map)(nil)
 
 // Map represents a map of key value pairs.
 type Map map[string]Value
-
-func (m Map) Set(key string, val Value) error {
-	m[key] = val
-	return nil
-}
-
-func (m Map) Get(key string) Value { return m[key] }
-
-func (m Map) Has(key string) bool {
-	_, ok := m[key]
-	return ok
-}
 
 // Lookup retrieves the Value of the environment variable named by the key.
 // If the key is present in Map, the value (which may be empty) is returned
@@ -53,8 +41,8 @@ func (m Map) MergeValues(src map[string]Value) {
 }
 
 // Environ returns a copy of the Map.
-func (m Map) Environ() Map {
+func (m Map) Environ() (Map, error) {
 	clone := make(Map, len(m))
 	clone.MergeValues(m)
-	return clone
+	return clone, nil
 }
