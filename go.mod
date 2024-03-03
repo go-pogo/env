@@ -7,7 +7,7 @@ require (
 	github.com/go-pogo/errors v0.9.0
 	github.com/go-pogo/rawconv v0.5.0
 	github.com/go-pogo/writing v0.1.1
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 )
 
 require (
