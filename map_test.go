@@ -6,9 +6,7 @@ package env
 
 import (
 	"github.com/stretchr/testify/assert"
-	"strconv"
 	"testing"
-	"time"
 )
 
 func TestMap_Lookup(t *testing.T) {
@@ -69,8 +67,4 @@ func TestMap_Environ(t *testing.T) {
 
 	src["foo"] = "qux"
 	assert.Equal(t, Value("bar"), clone["foo"])
-}
-
-func randKey() string {
-	return "somewhat_random_key_" + strconv.FormatInt(time.Now().Unix(), 10)
 }

@@ -8,13 +8,27 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"os"
+	"strconv"
 	"testing"
+	"time"
 )
 
-func TestLoad(t *testing.T) {
+func testEnviron() Map {
 	restore := Environ()
 	os.Clearenv()
-	defer Load(restore)
+	return restore
+}
+
+func restoreEnviron(restore Map) {
+	os.Clearenv()
+	if err := Load(restore); err != nil {
+		panic(err)
+	}
+}
+
+func TestLoad(t *testing.T) {
+	restore := testEnviron()
+	defer restoreEnviron(restore)
 
 	want := Value("this value is not overwritten")
 	key := randKey()
@@ -25,10 +39,17 @@ func TestLoad(t *testing.T) {
 }
 
 func TestMap_Overload(t *testing.T) {
+	restore := testEnviron()
+	defer restoreEnviron(restore)
+
 	want := Value("foobar")
 	key := randKey()
 	require.NoError(t, Setenv(key, "overwrite me!"))
 
 	assert.Nil(t, Overload(Map{key: want}))
 	assert.Equal(t, want, Getenv(key))
+}
+
+func randKey() string {
+	return "somewhat_random_key_" + strconv.FormatInt(time.Now().Unix(), 10)
 }
