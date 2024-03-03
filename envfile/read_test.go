@@ -12,7 +12,7 @@ import (
 func TestNewFileReader(t *testing.T) {
 	t.Run("nil reader", func(t *testing.T) {
 		assert.PanicsWithValue(t, panicNilFile, func() {
-			NewReader(nil)
+			_ = NewReader(nil)
 		})
 	})
 }
@@ -20,7 +20,7 @@ func TestNewFileReader(t *testing.T) {
 func TestOpenFS(t *testing.T) {
 	t.Run("nil fsys", func(t *testing.T) {
 		assert.PanicsWithValue(t, panicNilFsys, func() {
-			OpenFS(nil, "")
+			_, _ = OpenFS(nil, "")
 		})
 	})
 }
