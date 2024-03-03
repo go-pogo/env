@@ -17,7 +17,7 @@ func Prepare(testenvs env.Map) *Snapshot {
 	r := Snapshot{envs: env.Environ()}
 	os.Clearenv()
 
-	if testenvs != nil && len(testenvs) > 0 {
+	if len(testenvs) > 0 {
 		if err := env.Load(testenvs); err != nil {
 			panic(err)
 		}
