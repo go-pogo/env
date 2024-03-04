@@ -6,6 +6,7 @@ package env
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/go-pogo/env/envtag"
 	"github.com/go-pogo/errors"
 	"github.com/go-pogo/rawconv"
@@ -79,6 +80,7 @@ func (e *Encoder) WithWriter(writer io.Writer) *Encoder {
 // Supported types of v are:
 //   - Map
 //   - map[string]Value
+//   - map[fmt.Stringer]Value
 //   - []NamedValue
 //   - []envtag.Tag
 //   - any valid struct type
@@ -93,6 +95,12 @@ func (e *Encoder) Encode(v any) error {
 	case map[string]Value:
 		for key, val := range src {
 			e.writeKeyValueQuoted(key, val.String())
+		}
+		return nil
+
+	case map[fmt.Stringer]Value:
+		for key, val := range src {
+			e.writeKeyValueQuoted(key.String(), val.String())
 		}
 		return nil
 
