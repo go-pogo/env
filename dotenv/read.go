@@ -21,6 +21,9 @@ var (
 	_ io.Closer                = (*Reader)(nil)
 )
 
+// A Reader reads .env files from a filesystem and provides the mechanism to
+// lookup environment variables. Its zero value is ready to use and reads from
+// the current working directory.
 type Reader struct {
 	fsys  fs.FS
 	dir   string
@@ -28,16 +31,17 @@ type Reader struct {
 	found env.Map
 }
 
-// Read reads .env files from dir depending on the provided ActiveEnvironment.
+// Read reads .env files from dir, depending on the provided ActiveEnvironment.
 //
 //	var cfg MyConfig
 //	dec := env.NewDecoder(dotenv.Read("./", dotenv.Development))
 //	dec.Decode(&cfg)
 func Read(dir string, ae ActiveEnvironment) *Reader {
-	return newReader(osfs.FS{}, dir, ae)
+	return newReader(nil, dir, ae)
 }
 
-// ReadFS reads .env files at dir from fsys.
+// ReadFS reads .env files at dir from fsys, depending on the provided
+// ActiveEnvironment.
 func ReadFS(fsys fs.FS, dir string, ae ActiveEnvironment) *Reader {
 	if fsys == nil {
 		panic(panicNilFsys)
@@ -107,6 +111,7 @@ func (r *Reader) fileReader(f *file) (*envfile.Reader, bool, error) {
 	return f.reader, !f.notExists, nil
 }
 
+// Lookup key by reading from .env files.
 func (r *Reader) Lookup(key string) (env.Value, error) {
 	r.init(nil, "")
 	if v, ok := r.found[key]; ok {
@@ -172,6 +177,7 @@ func (r *Reader) Environ() (env.Map, error) {
 	return res, nil
 }
 
+// Close closes all opened .env files.
 func (r *Reader) Close() error {
 	var err error
 	for _, f := range r.files {

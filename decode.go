@@ -36,6 +36,7 @@ type DecodeOptions struct {
 	ReplaceVars bool
 }
 
+// A Decoder looks up environment variables while decoding them into a struct.
 type Decoder struct {
 	DecodeOptions
 	TagOptions
@@ -45,8 +46,8 @@ type Decoder struct {
 
 const panicNilLookupper = "env.Decoder: Lookupper must not be nil"
 
-// NewDecoder returns a new Decoder that looks up environment variables from
-// any Lookupper.
+// NewDecoder returns a new Decoder which looks up environment variables from
+// the provided Lookupper(s). When a Chain is provided it must not be empty.
 func NewDecoder(src ...Lookupper) *Decoder {
 	l, chained := chain(src...)
 	if !chained && l == nil {
@@ -74,7 +75,7 @@ func (d *Decoder) Strict() *Decoder {
 	return d
 }
 
-// WithLookupper changes the Decoder's internal Lookupper to l.
+// WithLookupper changes the internal Lookupper to l.
 func (d *Decoder) WithLookupper(l Lookupper) *Decoder {
 	if l == nil {
 		panic(panicNilLookupper)
@@ -84,11 +85,13 @@ func (d *Decoder) WithLookupper(l Lookupper) *Decoder {
 	return d
 }
 
+// WithOptions changes the internal DecodeOptions to opts.
 func (d *Decoder) WithOptions(opts DecodeOptions) *Decoder {
 	d.DecodeOptions = opts
 	return d
 }
 
+// WithTagOptions changes the internal TagOptions to opts.
 func (d *Decoder) WithTagOptions(opts TagOptions) *Decoder {
 	d.TagOptions = opts
 	return d

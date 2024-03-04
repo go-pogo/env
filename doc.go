@@ -4,9 +4,13 @@
 
 /*
 Package env implements encoding and decoding of environment variables from
-files, the OS or other data sources. It supports unmarshalling to structs and
-maps. The mapping between environment variables and Go values is described in
-the documentation for the Marshal and Unmarshal functions.
+files, the OS or other io.Reader compatible data sources. It supports
+unmarshalling to structs and maps, and marshaling from various types to files
+and io.Writer. It can also be used to load/overload environment variables into
+the system.
+
+The mapping between environment variables and Go values is described in the
+documentation for the Marshal and Unmarshal functions.
 
 # Supported types
 
@@ -24,7 +28,8 @@ variables are replaced before being set to the system using Setenv.
 # Dotenv
 
 The dotenv package supports reading and loading environment variables from .env
-files based on active environment (e.g. prod, dev etc.).
+files based on active environment (e.g. prod, dev etc.). See its documentation
+for more information.
 
 # Writing
 
