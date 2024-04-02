@@ -12,7 +12,7 @@ import (
 	"github.com/go-pogo/errors"
 	"io"
 	"io/fs"
-	"path/filepath"
+	"path"
 )
 
 type NoFilesLoadedError struct {
@@ -33,7 +33,7 @@ var (
 // lookup environment variables. Its zero value is ready to use and reads from
 // the current working directory.
 type Reader struct {
-	fsys  fs.FS
+	fsys  fsJoiner
 	dir   string
 	files []*file
 	found env.Map
@@ -77,11 +77,12 @@ func (r *Reader) init(fsys fs.FS, dir string) {
 		return
 	}
 	if fsys == nil {
-		fsys = osfs.FS{}
+		r.fsys = osfs.FS{}
+	} else {
+		r.fsys = joinerFS{fsys}
 	}
 
 	r.found = make(env.Map, 8)
-	r.fsys = fsys
 	r.dir = dir
 	r.files = []*file{
 		{name: ".env"},
@@ -102,7 +103,7 @@ func (r *Reader) fileReader(f *file) (*envfile.Reader, bool, error) {
 
 	filename := f.name
 	if r.dir != "" {
-		filename = filepath.Join(r.dir, filename)
+		filename = r.fsys.JoinFilePath(r.dir, filename)
 	}
 
 	fr, err := envfile.OpenFS(r.fsys, filename)
@@ -196,3 +197,14 @@ func (r *Reader) Close() error {
 	}
 	return err
 }
+
+type fsJoiner interface {
+	fs.FS
+	JoinFilePath(elem ...string) string
+}
+
+var _ fsJoiner = (*joinerFS)(nil)
+
+type joinerFS struct{ fs.FS }
+
+func (joinerFS) JoinFilePath(elem ...string) string { return path.Join(elem...) }
