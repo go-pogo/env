@@ -7,12 +7,13 @@ package env
 import (
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
-	"log"
 	"net"
 	"net/url"
 	"time"
 )
 
+// Below example demonstrates how to decode system environment variables into a
+// struct.
 func ExampleDecoder_Decode() {
 	type Config struct {
 		Foo     string
@@ -20,9 +21,8 @@ func ExampleDecoder_Decode() {
 	}
 
 	var conf Config
-	err := NewDecoder(System()).Decode(&conf)
-	if err != nil {
-		log.Fatalln("unable to decode system environment variables:", err)
+	if err := NewDecoder(System()).Decode(&conf); err != nil {
+		panic(err)
 	}
 
 	spew.Dump(conf)
@@ -51,7 +51,7 @@ IP=192.168.1.1`
 
 	var envs Envs
 	if err := Unmarshal([]byte(data), &envs); err != nil {
-		panic(fmt.Sprintf("%+v", err))
+		panic(err)
 	}
 
 	spew.Dump(envs)
@@ -78,7 +78,7 @@ func ExampleMarshal() {
 
 	b, err := Marshal(Envs{})
 	if err != nil {
-		panic(fmt.Sprintf("%+v", err))
+		panic(err)
 	}
 
 	fmt.Println(string(b))
