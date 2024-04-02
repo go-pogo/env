@@ -5,6 +5,7 @@
 package dotenv
 
 import (
+	"fmt"
 	"github.com/go-pogo/env"
 	"github.com/go-pogo/env/envfile"
 	"github.com/go-pogo/env/internal/osfs"
@@ -14,7 +15,14 @@ import (
 	"path/filepath"
 )
 
-const ErrNoFilesLoaded errors.Msg = "no files loaded"
+type NoFilesLoadedError struct {
+	FS  fs.FS
+	Dir string
+}
+
+func (e *NoFilesLoadedError) Error() string {
+	return fmt.Sprintf("no .env files loaded from directory `%s`", e.Dir)
+}
 
 var (
 	_ env.EnvironmentLookupper = (*Reader)(nil)
@@ -139,7 +147,7 @@ func (r *Reader) Lookup(key string) (env.Value, error) {
 		return v, nil
 	}
 	if !anyLoaded {
-		return "", errors.New(ErrNoFilesLoaded)
+		return "", errors.WithStack(&NoFilesLoadedError{FS: r.fsys, Dir: r.dir})
 	}
 
 	return "", errors.New(env.ErrNotFound)
@@ -170,7 +178,7 @@ func (r *Reader) Environ() (env.Map, error) {
 		res.MergeValues(m)
 	}
 	if !anyLoaded {
-		return nil, errors.New(ErrNoFilesLoaded)
+		return nil, errors.WithStack(&NoFilesLoadedError{FS: r.fsys, Dir: r.dir})
 	}
 
 	r.found.MergeValues(res)

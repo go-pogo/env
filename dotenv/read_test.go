@@ -32,7 +32,7 @@ func TestReader_Lookup(t *testing.T) {
 		None: {
 			"none loaded": {
 				Key:     "FOO",
-				WantErr: ErrNoFilesLoaded,
+				WantErr: &NoFilesLoadedError{},
 			},
 		},
 		Production: {
@@ -65,7 +65,7 @@ func TestReader_Lookup(t *testing.T) {
 					if tc.WantErr == nil {
 						assert.NoError(t, haveErr)
 					} else {
-						assert.ErrorIs(t, haveErr, tc.WantErr)
+						assert.ErrorAs(t, haveErr, &tc.WantErr)
 					}
 				})
 			}
@@ -91,7 +91,7 @@ func TestReader_Environ(t *testing.T) {
 		WantErr error
 	}{
 		None: {
-			WantErr: ErrNoFilesLoaded,
+			WantErr: &NoFilesLoadedError{},
 		},
 		Production: {
 			Want: env.Map{
@@ -110,7 +110,7 @@ func TestReader_Environ(t *testing.T) {
 			if tc.WantErr == nil {
 				assert.NoError(t, haveErr)
 			} else {
-				assert.ErrorIs(t, haveErr, tc.WantErr)
+				assert.ErrorAs(t, haveErr, &tc.WantErr)
 			}
 		})
 	}
