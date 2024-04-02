@@ -32,6 +32,8 @@ Included features are:
 * Encoding environment variables from any type;
 * Loading and overloading into the system's environment variables.
 
+<hr>
+
 ```sh
 go get github.com/go-pogo/env
 ```
@@ -42,12 +44,14 @@ import "github.com/go-pogo/env"
 
 ## Usage
 
+Below example demonstrates how to decode system environment variables into a struct.
+
 ```go
 package main
 
 import (
+    "github.com/davecgh/go-spew/spew"
     "github.com/go-pogo/env"
-    "log"
     "time"
 )
 
@@ -56,18 +60,53 @@ func main() {
         Foo     string
         Timeout time.Duration `default:"10s"`
     }
-    
-    var conf Config
-    err := env.NewDecoder(env.System()).Decode(&conf)
-    if err != nil {
-        log.Fatalln("unable to decode system environment variables:", err)
-    }
-}
 
+    var conf Config
+    if err := env.NewDecoder(env.System()).Decode(&conf); err != nil {
+        panic(err)
+    }
+
+    spew.Dump(conf)
+    // Output:
+    // (env.Config) {
+    //  Foo: (string) "",
+    //  Timeout: (time.Duration) 10s
+    // }
+}
 ```
 
 ## Usage with `dotenv`
 
+This example reads .env files from the _example_ directory and decodes the found variables into a struct.
+```go
+package main
+
+import (
+    "github.com/davecgh/go-spew/spew"
+    "github.com/go-pogo/env"
+    "github.com/go-pogo/env/dotenv"
+    "time"
+)
+
+func main() {
+    type Config struct {
+        Foo     string
+        Timeout time.Duration `default:"10s"`
+    }
+
+    var conf Config
+    if err := env.NewDecoder(dotenv.Read("example", dotenv.None)).Decode(&conf); err != nil {
+        panic(err)
+    }
+
+    spew.Dump(conf)
+    // Output:
+    // (dotenv.Config) {
+    //  Foo: (string) (len=3) "bar",
+    //  Timeout: (time.Duration) 2s
+    // }
+}
+```
 
 ## Documentation
 

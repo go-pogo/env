@@ -6,12 +6,12 @@
 Package dotenv supports reading and loading environment variables from .env
 files based on active environment (e.g. prod, dev etc.). The order or reading
 is as follows:
-- .env
-- .env.local
-- .env.{active-env}
-- .env.{active-env}.local
+  - .env
+  - .env.local
+  - .env.{active-env}
+  - .env.{active-env}.local
 
-It is recommended to not commit any .local files to the repository as these
+> It is recommended to not commit any .local files to the repository as these
 represent variables that are specific to your local environment.
 */
 package dotenv
