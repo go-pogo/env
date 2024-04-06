@@ -9,36 +9,26 @@ import (
 	"io/fs"
 )
 
-const panicNilFsys = "dotenv: fs.FS must not be nil"
-
 // Load sets the environment variables from the active environment using
 // env.Load.
 func Load(dir string, ae ActiveEnvironment) error {
-	return env.Load(ReadFS(nil, dir, ae))
+	return env.Load(Read(dir, ae))
 }
 
 // Overload sets and overwrites the environment variables from the active
 // environment using env.Overload.
 func Overload(dir string, ae ActiveEnvironment) error {
-	return env.Overload(ReadFS(nil, dir, ae))
+	return env.Overload(Read(dir, ae))
 }
 
 // LoadFS sets the environment variables from the active environment using
 // env.Load.
 func LoadFS(fsys fs.FS, dir string, ae ActiveEnvironment) error {
-	if fsys == nil {
-		panic(panicNilFsys)
-	}
-
 	return env.Load(ReadFS(fsys, dir, ae))
 }
 
 // OverloadFS sets and overwrites the environment variables from the active
 // environment using env.Overload.
 func OverloadFS(fsys fs.FS, dir string, ae ActiveEnvironment) error {
-	if fsys == nil {
-		panic(panicNilFsys)
-	}
-
 	return env.Overload(ReadFS(fsys, dir, ae))
 }

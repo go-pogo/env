@@ -48,6 +48,8 @@ func Read(dir string, ae ActiveEnvironment) *Reader {
 	return newReader(nil, dir, ae)
 }
 
+const panicNilFsys = "dotenv: fs.FS must not be nil"
+
 // ReadFS reads .env files at dir from fsys, depending on the provided
 // ActiveEnvironment.
 func ReadFS(fsys fs.FS, dir string, ae ActiveEnvironment) *Reader {
