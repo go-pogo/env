@@ -106,7 +106,7 @@ func (d *Decoder) Decode(v any) error {
 	if rv.Kind() != reflect.Ptr || rv.IsNil() {
 		return errors.New(ErrStructPointerExpected)
 	}
-	if underlyingKind(rv.Type()) != reflect.Struct {
+	if underlyingKind(rv.Elem().Type()) != reflect.Struct {
 		return errors.New(ErrStructPointerExpected)
 	}
 
