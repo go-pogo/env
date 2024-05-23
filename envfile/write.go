@@ -50,7 +50,12 @@ func Write(filename string, v any) (err error) {
 	if err != nil {
 		return err
 	}
-	return enc.Encode(v)
+
+	defer errors.AppendFunc(&err, enc.Close)
+	if err = enc.Encode(v); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Close closes its internal os.File.
