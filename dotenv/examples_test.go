@@ -6,9 +6,10 @@ package dotenv
 
 import (
 	"embed"
+	"time"
+
 	"github.com/davecgh/go-spew/spew"
 	"github.com/go-pogo/env"
-	"time"
 )
 
 //go:embed example/*

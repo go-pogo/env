@@ -5,11 +5,12 @@
 package dotenv
 
 import (
+	"testing"
+	"testing/fstest"
+
 	"github.com/go-pogo/env"
 	"github.com/go-pogo/env/envtest"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"testing/fstest"
 )
 
 func TestLoadFS(t *testing.T) {

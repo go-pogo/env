@@ -5,10 +5,11 @@
 package dotenv
 
 import (
-	"github.com/go-pogo/env"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"testing/fstest"
+
+	"github.com/go-pogo/env"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReader_Lookup(t *testing.T) {

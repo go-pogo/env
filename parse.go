@@ -6,10 +6,11 @@ package env
 
 import (
 	"fmt"
-	"github.com/go-pogo/errors"
-	"github.com/go-pogo/rawconv"
 	"strings"
 	"unicode"
+
+	"github.com/go-pogo/errors"
+	"github.com/go-pogo/rawconv"
 )
 
 const (

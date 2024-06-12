@@ -5,10 +5,11 @@
 package envfile
 
 import (
-	"github.com/go-pogo/env"
-	"github.com/go-pogo/errors"
 	"io"
 	"os"
+
+	"github.com/go-pogo/env"
+	"github.com/go-pogo/errors"
 )
 
 var _ io.Closer = (*Encoder)(nil)

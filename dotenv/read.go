@@ -6,13 +6,14 @@ package dotenv
 
 import (
 	"fmt"
+	"io"
+	"io/fs"
+	"path"
+
 	"github.com/go-pogo/env"
 	"github.com/go-pogo/env/envfile"
 	"github.com/go-pogo/env/internal/osfs"
 	"github.com/go-pogo/errors"
-	"io"
-	"io/fs"
-	"path"
 )
 
 type NoFilesLoadedError struct {

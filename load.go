@@ -5,8 +5,9 @@
 package env
 
 import (
-	"github.com/go-pogo/errors"
 	"strings"
+
+	"github.com/go-pogo/errors"
 )
 
 // Load sets the system's environment variables with those from the Map when

@@ -5,10 +5,11 @@
 package env
 
 import (
-	"github.com/stretchr/testify/assert"
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLookupFrom(t *testing.T) {

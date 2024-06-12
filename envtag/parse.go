@@ -5,9 +5,10 @@
 package envtag
 
 import (
-	"github.com/go-pogo/errors"
 	"reflect"
 	"strings"
+
+	"github.com/go-pogo/errors"
 )
 
 const (

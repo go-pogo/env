@@ -5,8 +5,9 @@
 package env
 
 import (
-	"github.com/go-pogo/errors"
 	"io"
+
+	"github.com/go-pogo/errors"
 )
 
 // Environment provides a Map of keys and values representing the environment.

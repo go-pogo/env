@@ -5,9 +5,10 @@
 package env
 
 import (
+	"reflect"
+
 	"github.com/go-pogo/env/envtag"
 	"github.com/go-pogo/rawconv"
-	"reflect"
 )
 
 func init() {

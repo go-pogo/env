@@ -5,9 +5,10 @@
 package env
 
 import (
-	"github.com/go-pogo/errors"
 	"os"
 	"strings"
+
+	"github.com/go-pogo/errors"
 )
 
 type osEnv struct{}

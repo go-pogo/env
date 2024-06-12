@@ -5,9 +5,10 @@
 package env
 
 import (
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewDecoder(t *testing.T) {

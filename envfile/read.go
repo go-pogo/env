@@ -5,11 +5,12 @@
 package envfile
 
 import (
+	"io"
+	"io/fs"
+
 	"github.com/go-pogo/env"
 	"github.com/go-pogo/env/internal/osfs"
 	"github.com/go-pogo/errors"
-	"io"
-	"io/fs"
 )
 
 var (

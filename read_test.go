@@ -5,8 +5,9 @@
 package env
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewReader(t *testing.T) {

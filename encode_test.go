@@ -5,15 +5,16 @@
 package env
 
 import (
-	"github.com/go-pogo/env/envtag"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"math"
 	"net/url"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/go-pogo/env/envtag"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewEncoder(t *testing.T) {

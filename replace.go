@@ -5,8 +5,9 @@
 package env
 
 import (
-	"github.com/go-pogo/errors"
 	"regexp"
+
+	"github.com/go-pogo/errors"
 )
 
 const ErrCircularDependency errors.Msg = "circular dependency"

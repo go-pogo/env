@@ -7,10 +7,11 @@
 package envfile
 
 import (
-	"github.com/go-pogo/errors"
 	"path"
 	"path/filepath"
 	"runtime"
+
+	"github.com/go-pogo/errors"
 )
 
 const (

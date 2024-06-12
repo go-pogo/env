@@ -5,8 +5,9 @@
 package dotenv
 
 import (
-	"github.com/go-pogo/env"
 	"io/fs"
+
+	"github.com/go-pogo/env"
 )
 
 // Load sets the environment variables from the active environment using

@@ -6,10 +6,11 @@ package env
 
 import (
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"net"
 	"net/url"
 	"time"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 // Below example demonstrates how to decode system environment variables into a

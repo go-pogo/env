@@ -5,9 +5,10 @@
 package env
 
 import (
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUnderlyingKind(t *testing.T) {

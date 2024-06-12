@@ -5,8 +5,9 @@
 package envtest
 
 import (
-	"github.com/go-pogo/env"
 	"os"
+
+	"github.com/go-pogo/env"
 )
 
 type Snapshot struct {

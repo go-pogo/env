@@ -5,9 +5,10 @@
 package envfile
 
 import (
+	"io/fs"
+
 	"github.com/go-pogo/env"
 	"github.com/go-pogo/env/internal/osfs"
-	"io/fs"
 )
 
 // Load reads from filename and sets the environment variables using env.Load.

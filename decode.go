@@ -6,11 +6,12 @@ package env
 
 import (
 	"bytes"
+	"io"
+	"reflect"
+
 	"github.com/go-pogo/env/envtag"
 	"github.com/go-pogo/errors"
 	"github.com/go-pogo/rawconv"
-	"io"
-	"reflect"
 )
 
 const ErrStructPointerExpected errors.Msg = "expected a non-nil pointer to a struct"

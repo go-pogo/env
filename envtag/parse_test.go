@@ -5,10 +5,11 @@
 package envtag
 
 import (
-	"github.com/go-pogo/errors"
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
+
+	"github.com/go-pogo/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseTag(t *testing.T) {

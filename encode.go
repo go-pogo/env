@@ -7,13 +7,14 @@ package env
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"reflect"
+	"strings"
+
 	"github.com/go-pogo/env/envtag"
 	"github.com/go-pogo/errors"
 	"github.com/go-pogo/rawconv"
 	"github.com/go-pogo/writing"
-	"io"
-	"reflect"
-	"strings"
 )
 
 const ErrStructExpected errors.Msg = "expected a struct type"
