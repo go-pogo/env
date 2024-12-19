@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-pogo/errors v0.11.2
-	github.com/go-pogo/rawconv v0.6.1
+	github.com/go-pogo/rawconv v0.6.2
 	github.com/go-pogo/writing v0.2.1
 	github.com/stretchr/testify v1.10.0
 )
