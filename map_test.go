@@ -64,7 +64,7 @@ func TestMap_Environ(t *testing.T) {
 	clone, _ := src.Environ()
 
 	assert.Equal(t, src, clone)
-	assert.NotSame(t, src, clone)
+	assert.NotSame(t, &src, &clone)
 
 	src["foo"] = "qux"
 	assert.Equal(t, Value("bar"), clone["foo"])
