@@ -63,6 +63,8 @@ func ReadFS(fsys fs.FS, dir string, ae ActiveEnvironment) *Reader {
 func newReader(fsys fs.FS, dir string, ae ActiveEnvironment) *Reader {
 	var r Reader
 	r.init(fsys, dir)
+
+	//nolint:errcheck
 	//goland:noinspection GoUnhandledErrorResult
 	defer r.Close()
 

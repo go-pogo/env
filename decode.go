@@ -72,7 +72,7 @@ func NewReaderDecoder(r io.Reader) *Decoder {
 
 // Strict sets the StrictTags option to true.
 func (d *Decoder) Strict() *Decoder {
-	d.TagOptions.StrictTags = true
+	d.StrictTags = true
 	return d
 }
 
