@@ -25,8 +25,8 @@ func (e *Error) Error() string {
 	return "error while parsing tag `" + e.TagString + "`"
 }
 
-// ParseTag parses str into a Tag. It will always return a usable Tag, even if
-// an error has occurred.
+// ParseTag parses str into a [Tag]. It will always return a usable [Tag], even
+// if an error has occurred.
 func ParseTag(str string) (Tag, error) {
 	var t Tag
 	err := parse(&t, str)
@@ -35,9 +35,9 @@ func ParseTag(str string) (Tag, error) {
 
 const panicNormalizerEmptyName = "envtag: Normalizer returned an empty name"
 
-// ParseStructField uses the field's reflect.StructTag to lookup the tag string
-// according to the provided Options. It will always return a usable Tag, even
-// if an error has occurred.
+// ParseStructField uses the field's [reflect.StructTag] to lookup the tag
+// string according to the provided [Options]. It will always return a usable
+// [Tag], even if an error has occurred.
 func ParseStructField(opts Options, field reflect.StructField, prefix string) (tag Tag, err error) {
 	if !field.IsExported() {
 		tag.Ignore = true

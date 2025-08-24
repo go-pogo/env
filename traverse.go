@@ -11,6 +11,8 @@ import (
 	"github.com/go-pogo/rawconv"
 )
 
+type TagOptions = envtag.Options
+
 func init() {
 	unmarshaler.Register(
 		reflect.TypeOf((*Unmarshaler)(nil)).Elem(),
@@ -38,8 +40,6 @@ func typeKnownByUnmarshaler(typ reflect.Type) bool {
 func typeKnownByMarshaler(typ reflect.Type) bool {
 	return marshaler.Func(typ) != nil
 }
-
-type TagOptions = envtag.Options
 
 type traverser struct {
 	TagOptions

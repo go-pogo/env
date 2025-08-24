@@ -53,25 +53,25 @@ type Encoder struct {
 
 const panicNilWriter = "env.Encoder: io.Writer must not be nil"
 
-// NewEncoder returns a new Encoder which writes to w.
+// NewEncoder returns a new [Encoder] which writes to w.
 func NewEncoder(w io.Writer) *Encoder {
 	var enc Encoder
 	return enc.WithTagOptions(envtag.DefaultOptions()).WithWriter(w)
 }
 
-// WithOptions changes the internal EncodeOptions to opts.
+// WithOptions changes the internal [EncodeOptions] to opts.
 func (e *Encoder) WithOptions(opts EncodeOptions) *Encoder {
 	e.EncodeOptions = opts
 	return e
 }
 
-// WithTagOptions changes the internal TagOptions to opts.
+// WithTagOptions changes the internal [TagOptions] to opts.
 func (e *Encoder) WithTagOptions(opts TagOptions) *Encoder {
 	e.TagOptions = opts
 	return e
 }
 
-// WithWriter changes the internal io.Writer to w.
+// WithWriter changes the internal [io.Writer] to w.
 func (e *Encoder) WithWriter(w io.Writer) *Encoder {
 	if w == nil {
 		panic(panicNilWriter)
@@ -80,13 +80,13 @@ func (e *Encoder) WithWriter(w io.Writer) *Encoder {
 	return e
 }
 
-// Encode writes the env format encoding of v to the underlying io.Writer.
+// Encode writes the env format encoding of v to the underlying [io.Writer].
 // Supported types of v are:
-//   - Map
-//   - map[string]Value
-//   - map[fmt.Stringer]Value
-//   - []NamedValue
-//   - []envtag.Tag
+//   - [Map]
+//   - map[string][Value]
+//   - map[[fmt.Stringer]][Value]
+//   - [][NamedValue]
+//   - [][envtag.Tag]
 //   - any struct type the rawconv package can handle
 func (e *Encoder) Encode(v any) error {
 	switch src := v.(type) {

@@ -50,7 +50,7 @@ func NewReplacer(l Lookupper) *Replacer {
 	}
 }
 
-// Unwrap returns the original Lookupper that was wrapped by the Replacer.
+// Unwrap returns the original [Lookupper] that was wrapped by the [Replacer].
 func (r *Replacer) Unwrap() Lookupper { return r.lookupper }
 
 func (r *Replacer) Lookup(k string) (Value, error) {

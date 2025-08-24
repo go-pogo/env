@@ -19,23 +19,25 @@ type osEnv struct{}
 //	dec := NewDecoder(System())
 func System() LookupMapper { return new(osEnv) }
 
-// Setenv sets the Value of the environment variable named by the key using
-// // os.Setenv.
+// Setenv sets the [Value] of the environment variable named by the key using
+// [os.Setenv].
 func Setenv(key string, val Value) error {
 	return errors.WithStack(os.Setenv(key, val.String()))
 }
 
-// Getenv retrieves the Value of the environment variable named by the key using
-// os.Getenv.
+// Getenv retrieves the [Value] of the environment variable named by the key
+// using [os.Getenv].
 func Getenv(key string) Value { return Value(os.Getenv(key)) }
 
-// LookupEnv retrieves the Value of the environment variable named by the key
-// using os.LookupEnv.
+// LookupEnv retrieves the [Value] of the environment variable named by the key
+// using [os.LookupEnv].
 func LookupEnv(key string) (Value, bool) {
 	v, ok := os.LookupEnv(key)
 	return Value(v), ok
 }
 
+// Lookup retrieves the [Value] of the environment variable named by the key
+// using [LookupEnv].
 func (o osEnv) Lookup(key string) (Value, error) {
 	v, ok := LookupEnv(key)
 	if !ok {
@@ -44,7 +46,7 @@ func (o osEnv) Lookup(key string) (Value, error) {
 	return v, nil
 }
 
-// Environ returns a Map with the environment variables using os.Environ.
+// Environ returns a [Map] with the environment variables using [os.Environ].
 func Environ() Map {
 	env := os.Environ()
 	res := make(Map, len(env))

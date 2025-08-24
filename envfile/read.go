@@ -26,8 +26,8 @@ type Reader struct {
 	file fs.File
 }
 
-// NewReader returns a Reader which looks up environment variables from
-// the provided fs.File.
+// NewReader returns a [Reader] which looks up environment variables from
+// the provided [fs.File].
 //
 //	dec := env.NewDecoder(envfile.NewReader(file))
 func NewReader(f fs.File) *Reader {
@@ -40,16 +40,16 @@ func NewReader(f fs.File) *Reader {
 	}
 }
 
-// Open opens filename for reading using os.Open and returns a new *Reader.
-// It is the caller's responsibility to close the Reader when finished.
-// If there is an error, it will be of type *os.PathError.
+// Open opens filename for reading using [os.Open] and returns a new [Reader].
+// It is the caller's responsibility to close the [Reader] when finished.
+// If there is an error, it will be of type *[os.PathError].
 func Open(filename string) (*Reader, error) {
 	return OpenFS(osfs.FS{}, filename)
 }
 
-// OpenFS opens filename for reading from fsys and returns a new *Reader.
-// It is the caller's responsibility to close the Reader when finished.
-// If there is an error, it will be of type *os.PathError.
+// OpenFS opens filename for reading from fsys and returns a new [Reader].
+// It is the caller's responsibility to close the [Reader] when finished.
+// If there is an error, it will be of type *[os.PathError].
 func OpenFS(fsys fs.FS, filename string) (*Reader, error) {
 	if fsys == nil {
 		panic(panicNilFsys)
@@ -62,7 +62,7 @@ func OpenFS(fsys fs.FS, filename string) (*Reader, error) {
 	return NewReader(f), nil
 }
 
-// Close closes the underlying fs.File.
+// Close closes the underlying [fs.File].
 func (f *Reader) Close() error {
 	return errors.WithStack(f.file.Close())
 }

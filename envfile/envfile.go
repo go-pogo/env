@@ -15,8 +15,8 @@ const (
 	panicNilFsys = "envfile: fs.FS must not be nil"
 )
 
-// Generate encodes and writes an env file in dir based on the provided src.
-// It is meant to be used with go generate to create .env files based on the
+// Generate encodes and writes the env file at the provided filename. It is
+// meant to be used with "go generate" to create .env files based on the
 // project's config(s).
 func Generate(filename string, src any) error {
 	enc, err := Create(filename)

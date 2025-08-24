@@ -8,17 +8,17 @@ import (
 	"github.com/go-pogo/errors"
 )
 
-// ErrNotFound is returned when a Lookup call cannot find a matching key.
+// ErrNotFound is returned when a [Lookup] call cannot find a matching key.
 const ErrNotFound errors.Msg = "not found"
 
-// IsNotFound tests whether the provided error is ErrNotFound.
+// IsNotFound tests whether the provided error is [ErrNotFound].
 func IsNotFound(err error) bool {
 	return errors.Is(errors.Unembed(err), ErrNotFound)
 }
 
 type Lookupper interface {
-	// Lookup retrieves the Value of the environment variable named by the key.
-	// It must return an ErrNotFound error if the key is not present.
+	// Lookup retrieves the [Value] of the environment variable named by the
+	// key. It must return an [ErrNotFound] error if the key is not present.
 	Lookup(key string) (val Value, err error)
 }
 
@@ -26,11 +26,11 @@ type LookupperFunc func(key string) (Value, error)
 
 func (f LookupperFunc) Lookup(key string) (Value, error) { return f(key) }
 
-// Lookup retrieves the Value of the environment variable named by the key
-// from any of the provided Lookupper(s).
+// Lookup retrieves the [Value] of the environment variable named by the key
+// from any of the provided [Lookupper](s).
 // If the key is present the value (which may be empty) is returned and the
 // error is nil. Otherwise, the returned value will be empty and the error
-// ErrNotFound.
+// [ErrNotFound].
 func Lookup(key string, from ...Lookupper) (Value, error) {
 	for _, l := range from {
 		if v, err := l.Lookup(key); IsNotFound(err) {
@@ -46,7 +46,7 @@ var _ Lookupper = (chainLookupper)(nil)
 
 type chainLookupper []Lookupper
 
-// Chain multiple Lookupper(s) to lookup keys from.
+// Chain multiple [Lookupper](s) to lookup keys from.
 func Chain(l ...Lookupper) Lookupper {
 	res, chained := chain(l...)
 	if !chained && res == nil {
@@ -75,4 +75,6 @@ func chain(lookuppers ...Lookupper) (Lookupper, bool) {
 	return res, true
 }
 
-func (c chainLookupper) Lookup(key string) (Value, error) { return Lookup(key, c...) }
+func (c chainLookupper) Lookup(key string) (Value, error) {
+	return Lookup(key, c...)
+}

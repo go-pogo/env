@@ -19,7 +19,7 @@ const (
 	ErrEmptyKey        errors.Msg = "empty key"
 )
 
-// Value is an alias of rawconv.Value.
+// Value is an alias of [rawconv.Value].
 type Value = rawconv.Value
 
 type NamedValue struct {
@@ -32,7 +32,7 @@ func (nv NamedValue) GoString() string {
 }
 
 // Parse parses a string containing a possible key value pair. Any whitespace
-// at the start and/or end of str is trimmed. It returns an empty NamedValue
+// at the start and/or end of str is trimmed. It returns an empty [NamedValue]
 // when the provided str, after trimming, begins with #.
 func Parse(str string) (NamedValue, error) {
 	str = strings.TrimSpace(str)

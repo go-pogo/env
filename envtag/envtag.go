@@ -22,12 +22,12 @@ type Tag struct {
 	Include bool
 }
 
-// IsEmpty indicates if Tag is considered empty.
+// IsEmpty indicates if [Tag] is considered empty.
 func (t Tag) IsEmpty() bool {
 	return t.Name == "" && !t.Ignore && !t.Inline && !t.Include
 }
 
-// ShouldIgnore indicates if Tag should be ignored.
+// ShouldIgnore indicates if [Tag] should be ignored.
 func (t Tag) ShouldIgnore() bool {
 	return t.Name == "" || t.Ignore
 }

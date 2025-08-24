@@ -20,14 +20,14 @@ var unmarshaler rawconv.Unmarshaler
 
 // Unmarshaler is the interface implemented by types that can unmarshal a
 // textual representation of themselves.
-// It is similar to encoding.TextUnmarshaler.
+// It is similar to [encoding.TextUnmarshaler].
 type Unmarshaler interface {
 	UnmarshalEnv([]byte) error
 }
 
 // Unmarshal parses the env formatted data and stores the result in the value
 // pointed to by v. If v is nil or not a pointer, Unmarshal returns an
-// ErrStructPointerExpected error.
+// [ErrStructPointerExpected] error.
 func Unmarshal(data []byte, v any) error {
 	return NewReaderDecoder(bytes.NewReader(data)).Decode(v)
 }
@@ -47,8 +47,8 @@ type Decoder struct {
 
 const panicNilLookupper = "env.Decoder: Lookupper must not be nil"
 
-// NewDecoder returns a new Decoder which looks up environment variables from
-// the provided Lookupper(s). When a Chain is provided it must not be empty.
+// NewDecoder returns a new [Decoder] which looks up environment variables from
+// the provided [Lookupper](s). When a [Chain] is provided it must not be empty.
 func NewDecoder(src ...Lookupper) *Decoder {
 	l, chained := chain(src...)
 	if !chained && l == nil {
@@ -62,8 +62,8 @@ func NewDecoder(src ...Lookupper) *Decoder {
 		WithTagOptions(envtag.DefaultOptions())
 }
 
-// NewReaderDecoder returns a new Decoder similar to calling NewDecoder with
-// NewReader as argument.
+// NewReaderDecoder returns a new [Decoder] similar to calling [NewDecoder] with
+// [NewReader] as argument.
 func NewReaderDecoder(r io.Reader) *Decoder {
 	return (&Decoder{lookupper: NewReader(r)}).
 		WithOptions(DecodeOptions{ReplaceVars: true}).
@@ -76,7 +76,7 @@ func (d *Decoder) Strict() *Decoder {
 	return d
 }
 
-// WithLookupper changes the internal Lookupper to l.
+// WithLookupper changes the internal [Lookupper] to l.
 func (d *Decoder) WithLookupper(l Lookupper) *Decoder {
 	if l == nil {
 		panic(panicNilLookupper)
@@ -86,13 +86,13 @@ func (d *Decoder) WithLookupper(l Lookupper) *Decoder {
 	return d
 }
 
-// WithOptions changes the internal DecodeOptions to opts.
+// WithOptions changes the internal [DecodeOptions] to opts.
 func (d *Decoder) WithOptions(opts DecodeOptions) *Decoder {
 	d.DecodeOptions = opts
 	return d
 }
 
-// WithTagOptions changes the internal TagOptions to opts.
+// WithTagOptions changes the internal [TagOptions] to opts.
 func (d *Decoder) WithTagOptions(opts TagOptions) *Decoder {
 	d.TagOptions = opts
 	return d
