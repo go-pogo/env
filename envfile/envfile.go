@@ -7,10 +7,6 @@
 package envfile
 
 import (
-	"path"
-	"path/filepath"
-	"runtime"
-
 	"github.com/go-pogo/errors"
 )
 
@@ -22,16 +18,7 @@ const (
 // Generate encodes and writes an env file in dir based on the provided src.
 // It is meant to be used with go generate to create .env files based on the
 // project's config(s).
-func Generate(dir, filename string, src any) error {
-	if dir == "" {
-		_, dir, _, _ = runtime.Caller(1)
-		dir = filepath.Dir(dir)
-	}
-
-	if !path.IsAbs(filename) {
-		filename = filepath.Join(dir, ".env")
-	}
-
+func Generate(filename string, src any) error {
 	enc, err := Create(filename)
 	if err != nil {
 		return errors.WithStack(err)
