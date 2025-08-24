@@ -13,11 +13,11 @@ import (
 
 type osEnv struct{}
 
-// System returns an EnvironmentLookupper which wraps the operating system's env related
-// functions.
+// System returns a [LookupMapper] which wraps the operating system's env
+// related functions.
 //
 //	dec := NewDecoder(System())
-func System() EnvironmentLookupper { return new(osEnv) }
+func System() LookupMapper { return new(osEnv) }
 
 // Setenv sets the Value of the environment variable named by the key using
 // // os.Setenv.

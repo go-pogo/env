@@ -10,19 +10,19 @@ import (
 	"github.com/go-pogo/errors"
 )
 
-// Load sets the system's environment variables with those from the Map when
-// they do not exist.
-func Load(envs Environment) error {
+// Load sets the system's environment variables with those from the [Mapper]
+// when they do not exist.
+func Load(envs Mapper) error {
 	return load(envs, false)
 }
 
 // Overload sets and overwrites the system's environment variables with those
-// from the Map.
-func Overload(envs Environment) error {
+// from the [Mapper].
+func Overload(envs Mapper) error {
 	return load(envs, true)
 }
 
-func load(envs Environment, overload bool) (err error) {
+func load(envs Mapper, overload bool) (err error) {
 	var m Map
 	if em, ok := envs.(Map); ok {
 		m = em

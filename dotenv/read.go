@@ -26,8 +26,8 @@ func (e *NoFilesLoadedError) Error() string {
 }
 
 var (
-	_ env.EnvironmentLookupper = (*Reader)(nil)
-	_ io.Closer                = (*Reader)(nil)
+	_ env.LookupMapper = (*Reader)(nil)
+	_ io.Closer        = (*Reader)(nil)
 )
 
 // A Reader reads .env files from a filesystem and provides the mechanism to

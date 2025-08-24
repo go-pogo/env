@@ -8,7 +8,12 @@ import (
 	"github.com/go-pogo/errors"
 )
 
-var _ EnvironmentLookupper = (Map)(nil)
+// Mapper provides a [Map] of keys and values representing the environment.
+type Mapper interface {
+	Environ() (Map, error)
+}
+
+var _ LookupMapper = (Map)(nil)
 
 // Map represents a map of key value pairs.
 type Map map[string]Value

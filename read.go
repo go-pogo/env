@@ -10,17 +10,12 @@ import (
 	"github.com/go-pogo/errors"
 )
 
-// Environment provides a Map of keys and values representing the environment.
-type Environment interface {
-	Environ() (Map, error)
-}
-
-type EnvironmentLookupper interface {
+type LookupMapper interface {
 	Lookupper
-	Environment
+	Mapper
 }
 
-var _ EnvironmentLookupper = (*Reader)(nil)
+var _ LookupMapper = (*Reader)(nil)
 
 type Reader struct {
 	scanner *Scanner
