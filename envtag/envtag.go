@@ -5,6 +5,10 @@
 // Package envtag provides tools to parse tags from strings or struct fields.
 package envtag
 
+import (
+	"github.com/go-pogo/rawconv"
+)
+
 type Tag struct {
 	// Name of the tag which will be used to construct the environment
 	// variable's full name.
@@ -21,6 +25,8 @@ type Tag struct {
 	// they do not have an env tag and Options.StrictTag is set to true.
 	Include bool
 }
+
+func (t Tag) DefaultValue() rawconv.Value { return rawconv.Value(t.Default) }
 
 // IsEmpty indicates if [Tag] is considered empty.
 func (t Tag) IsEmpty() bool {
