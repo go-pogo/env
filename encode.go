@@ -126,7 +126,7 @@ func (e *Encoder) Encode(v any) error {
 
 		return (&traverser{
 			TagOptions:  e.TagOptions,
-			isTypeKnown: typeKnownByMarshaler,
+			isKnownType: typeKnownByMarshaler,
 			handleField: e.encodeField,
 		}).start(rv)
 	}

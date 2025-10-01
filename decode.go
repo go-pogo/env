@@ -116,7 +116,7 @@ func (d *Decoder) Decode(v any) error {
 
 	return (&traverser{
 		TagOptions:  d.TagOptions,
-		isTypeKnown: typeKnownByUnmarshaler,
+		isKnownType: typeKnownByUnmarshaler,
 		handleField: d.decodeField,
 	}).start(rv)
 }

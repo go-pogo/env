@@ -21,7 +21,7 @@ func typeKnownByMarshaler(typ reflect.Type) bool {
 type traverser struct {
 	TagOptions
 
-	isTypeKnown func(reflect.Type) bool
+	isKnownType func(reflect.Type) bool
 	handleField func(reflect.Value, envtag.Tag) error
 }
 
@@ -38,6 +38,7 @@ func (t *traverser) traverse(pv reflect.Value, prefix string, include bool) erro
 	pt := pv.Type()
 	for i, l := 0, pv.NumField(); i < l; i++ {
 		field, rv := pt.Field(i), pv.Field(i)
+
 		kind := underlyingKind(field.Type)
 		if kind == reflect.Invalid || kind == reflect.Uintptr || kind == reflect.Chan || kind == reflect.Func || kind == reflect.UnsafePointer {
 			// unsupported types
@@ -53,7 +54,18 @@ func (t *traverser) traverse(pv reflect.Value, prefix string, include bool) erro
 		if tag.ShouldIgnore() {
 			continue
 		}
-		if kind != reflect.Struct || t.isTypeKnown(rv.Type()) {
+
+		/*if t.isKnownType == nil {
+			if handled, err := t.handleField(rv, tag); err != nil {
+				return err
+			} else if handled {
+				continue
+			}
+		} else*/if kind != reflect.Struct || t.isKnownType(rv.Type()) {
+			// when the field is a struct and is a known type (of the global
+			// (un)marshaler) it means the Decoder/Encoder can handle the field
+			// after which we'll continue with the next field, without further
+			// traversing the struct's fields
 			if err := t.handleField(rv, tag); err != nil {
 				return err
 			}
@@ -69,9 +81,6 @@ func (t *traverser) traverse(pv reflect.Value, prefix string, include bool) erro
 
 		if err := t.traverse(rv, p, include || tag.Include); err != nil {
 			return err
-		} else {
-			// no error, continue to next field
-			continue
 		}
 	}
 	return nil
