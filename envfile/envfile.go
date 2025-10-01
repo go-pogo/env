@@ -6,30 +6,7 @@
 // files.
 package envfile
 
-import (
-	"github.com/go-pogo/errors"
-)
-
 const (
 	panicNilFile = "envfile: file must not be nil"
 	panicNilFsys = "envfile: fs.FS must not be nil"
 )
-
-// Generate encodes and writes the env file at the provided filename. It is
-// meant to be used with "go generate" to create .env files based on the
-// project's config(s).
-func Generate(filename string, src any) error {
-	enc, err := Create(filename)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	enc.TakeValues = true
-	defer errors.AppendFunc(&err, enc.Close)
-
-	if err = enc.Encode(src); err != nil {
-		err = errors.WithStack(err)
-		return err
-	}
-	return nil
-}

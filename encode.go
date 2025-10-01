@@ -9,11 +9,9 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-	"strings"
 
 	"github.com/go-pogo/env/envtag"
 	"github.com/go-pogo/errors"
-	"github.com/go-pogo/rawconv"
 	"github.com/go-pogo/writing"
 )
 
@@ -37,8 +35,11 @@ func Marshal(v any) ([]byte, error) {
 type EncodeOptions struct {
 	// TakeValues takes the values from the struct field.
 	TakeValues bool
-	// ExportPrefix adds an export prefix to each relevant line.
+	// ExportPrefix adds an "export" prefix to each relevant line.
+	// Deprecated: Use [FormatShellExport] [Formatter] instead.
 	ExportPrefix bool
+
+	Formatter Formatter
 }
 
 // An Encoder writes env values to an output stream.
@@ -53,11 +54,18 @@ const panicNilWriter = "env.Encoder: io.Writer must not be nil"
 
 // NewEncoder returns a new [Encoder] which writes to w.
 func NewEncoder(w io.Writer) *Encoder {
-	var enc Encoder
-	return enc.WithTagOptions(envtag.DefaultOptions()).WithWriter(w)
+	if w == nil {
+		panic(panicNilWriter)
+	}
+
+	return &Encoder{
+		EncodeOptions: EncodeOptions{Formatter: Format},
+		TagOptions:    envtag.DefaultOptions(),
+		w:             writing.ToStringWriter(w),
+	}
 }
 
-// WithOptions changes the internal [EncodeOptions] to opts.
+// WithOptions sets EncodeOptions to the provided [EncodeOptions] opts.
 func (e *Encoder) WithOptions(opts EncodeOptions) *Encoder {
 	e.EncodeOptions = opts
 	return e
@@ -66,6 +74,12 @@ func (e *Encoder) WithOptions(opts EncodeOptions) *Encoder {
 // WithTagOptions sets TagOptions to the provided [TagOptions] opts.
 func (e *Encoder) WithTagOptions(opts TagOptions) *Encoder {
 	e.TagOptions = opts
+	return e
+}
+
+// WithFormatter sets Formatter to the provided [Formatter] p.
+func (e *Encoder) WithFormatter(p Formatter) *Encoder {
+	e.Formatter = p
 	return e
 }
 
@@ -86,35 +100,54 @@ func (e *Encoder) WithWriter(w io.Writer) *Encoder {
 //   - [][NamedValue]
 //   - [][envtag.Tag]
 //   - any struct type the rawconv package can handle
-func (e *Encoder) Encode(v any) error {
+func (e *Encoder) Encode(v any) (err error) {
+	if e.Formatter == nil {
+		//goland:noinspection GoDeprecation
+		if e.ExportPrefix {
+			e.Formatter = FormatShellExport
+		} else {
+			e.Formatter = Format
+		}
+	}
+
 	switch src := v.(type) {
 	case Map:
 		for key, val := range src {
-			e.writeKeyValueQuoted(key, val.String())
+			if err = e.print(key, val); err != nil {
+				return err
+			}
 		}
 		return nil
 
 	case map[string]Value:
 		for key, val := range src {
-			e.writeKeyValueQuoted(key, val.String())
+			if err = e.print(key, val); err != nil {
+				return err
+			}
 		}
 		return nil
 
 	case map[fmt.Stringer]Value:
 		for key, val := range src {
-			e.writeKeyValueQuoted(key.String(), val.String())
+			if err = e.print(key.String(), val); err != nil {
+				return err
+			}
 		}
 		return nil
 
 	case []NamedValue:
 		for _, nv := range src {
-			e.writeKeyValueQuoted(nv.Name, nv.Value.String())
+			if err = e.print(nv.Name, nv.Value); err != nil {
+				return err
+			}
 		}
 		return nil
 
 	case []envtag.Tag:
 		for _, t := range src {
-			e.writeKeyValueQuoted(t.Name, t.Default)
+			if err = e.print(t.Name, t.Default); err != nil {
+				return err
+			}
 		}
 		return nil
 
@@ -132,64 +165,32 @@ func (e *Encoder) Encode(v any) error {
 	}
 }
 
-func (e *Encoder) encodeField(rv reflect.Value, tag envtag.Tag) (err error) {
-	val := tag.Default
-	if e.TakeValues && !rv.IsZero() {
-		val, err = marshalAndQuote(rv)
-		if err != nil {
+func (e *Encoder) encodeField(rv reflect.Value, tag envtag.Tag) error {
+	if !e.TakeValues {
+		if tag.Default != "" {
+			return e.print(tag.Name, tag.Default)
+		}
+		return e.print(tag.Name, reflect.New(rv.Type()).Elem())
+	}
+	if rv.IsZero() && tag.Default != "" {
+		ptr := reflect.New(rv.Type())
+		if err := unmarshaler.Unmarshal(tag.DefaultValue(), ptr); err != nil {
 			return err
 		}
-	} else if !e.TakeValues && val == "" {
-		val, err = marshalAndQuote(reflect.New(rv.Type()).Elem())
-		if err != nil {
-			return err
-		}
+
+		rv = ptr.Elem()
 	}
-
-	e.writeKeyValue(tag.Name, val)
-	return nil
+	return e.print(tag.Name, rv)
 }
 
-func (e *Encoder) writeKeyValue(key, val string) {
-	if e.ExportPrefix {
-		_, _ = e.w.WriteString("export ")
-	}
-
-	_, _ = e.w.WriteString(key)
-	_, _ = e.w.WriteString("=")
-	_, _ = e.w.WriteString(val)
-	_, _ = e.w.WriteString("\n")
-}
-
-func (e *Encoder) writeKeyValueQuoted(key, val string) {
-	e.writeKeyValue(key, quote(val))
-}
-
-func marshalAndQuote(rv reflect.Value) (string, error) {
-	v, err := marshaler.Marshal(rv)
+func (e *Encoder) print(name string, val any) error {
+	str, err := e.Formatter(name, val)
 	if err != nil {
-		return "", err
+		return err
 	}
-	return quote(v.String()), nil
-}
-
-func quote(str string) string {
-	if str == "" {
-		return str
+	if _, err = e.w.WriteString(str + "\n"); err != nil {
+		return err
 	}
 
-	isq := strings.IndexRune(str, '\'')
-	idq := strings.IndexRune(str, '"')
-	if isq == -1 && idq == -1 {
-		return str
-	}
-
-	quot := "\""
-	if isq == -1 && idq >= 0 {
-		quot = "'"
-	} else if isq >= 0 && idq >= 0 {
-		str = strings.ReplaceAll(str, quot, "\\"+quot)
-	}
-
-	return quot + str + quot
+	return nil
 }

@@ -60,6 +60,25 @@ func Write(filename string, v any) (err error) {
 	return nil
 }
 
+// Generate encodes and writes the env file at the provided filename. It is
+// meant to be used with "go generate" to create .env files based on the
+// project's config(s).
+func Generate(filename string, v any, fmt env.Formatter) error {
+	enc, err := Create(filename)
+	if err != nil {
+		return err
+	}
+
+	enc.TakeValues = true
+	enc.Formatter = fmt
+
+	defer errors.AppendFunc(&err, enc.Close)
+	if err = enc.Encode(v); err != nil {
+		return err
+	}
+	return nil
+}
+
 // Close closes its internal [os.File].
 func (fe *Encoder) Close() error {
 	return errors.WithStack(fe.file.Close())
