@@ -35,7 +35,7 @@ func ParseTag(str string) (Tag, error) {
 
 const panicNormalizerEmptyName = "envtag: Normalizer returned an empty name"
 
-// ParseStructField uses the field's [reflect.StructTag] to lookup the tag
+// ParseStructField uses the field's [reflect.StructTag] to look up the tag
 // string according to the provided [Options]. It will always return a usable
 // [Tag], even if an error has occurred.
 func ParseStructField(opts Options, field reflect.StructField, prefix string) (tag Tag, err error) {
@@ -47,7 +47,7 @@ func ParseStructField(opts Options, field reflect.StructField, prefix string) (t
 	if str, found := field.Tag.Lookup(opts.EnvKey); found {
 		// err warns for unsupported tag options, so continue parsing
 		err = parse(&tag, str)
-	} else if !found && opts.StrictTags {
+	} else if opts.StrictTags {
 		tag.Ignore = true
 		return
 	}
