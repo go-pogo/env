@@ -8,8 +8,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/go-pogo/env/envtag"
 	"github.com/go-pogo/errors"
 )
+
+// TagOptions is an alias of [envtag.Options].
+type TagOptions = envtag.Options
 
 type osEnv struct{}
 

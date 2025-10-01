@@ -8,30 +8,7 @@ import (
 	"reflect"
 
 	"github.com/go-pogo/env/envtag"
-	"github.com/go-pogo/rawconv"
 )
-
-type TagOptions = envtag.Options
-
-func init() {
-	unmarshaler.Register(
-		reflect.TypeOf((*Unmarshaler)(nil)).Elem(),
-		func(val rawconv.Value, dest any) error {
-			return dest.(Unmarshaler).UnmarshalEnv(val.Bytes())
-		},
-	)
-
-	marshaler.Register(
-		reflect.TypeOf((*Marshaler)(nil)).Elem(),
-		func(v any) (string, error) {
-			b, err := v.(Marshaler).MarshalEnv()
-			if err != nil {
-				return "", err
-			}
-			return string(b), err
-		},
-	)
-}
 
 func typeKnownByUnmarshaler(typ reflect.Type) bool {
 	return unmarshaler.Func(typ) != nil

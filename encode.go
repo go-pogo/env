@@ -19,8 +19,6 @@ import (
 
 const ErrStructExpected errors.Msg = "expected a struct type"
 
-var marshaler rawconv.Marshaler
-
 // Marshaler is the interface implemented by types that can marshal themselves
 // into valid env values.
 type Marshaler interface {

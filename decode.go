@@ -11,12 +11,9 @@ import (
 
 	"github.com/go-pogo/env/envtag"
 	"github.com/go-pogo/errors"
-	"github.com/go-pogo/rawconv"
 )
 
 const ErrStructPointerExpected errors.Msg = "expected a non-nil pointer to a struct"
-
-var unmarshaler rawconv.Unmarshaler
 
 // Unmarshaler is the interface implemented by types that can unmarshal a
 // textual representation of themselves.
