@@ -31,7 +31,7 @@ func (nv NamedValue) GoString() string {
 	return `env.NamedValue(` + nv.Name + `="` + nv.Value.String() + `")`
 }
 
-// Parse parses a string containing a possible key value pair. Any whitespace
+// Parse parses a string containing a possible name/value pair. Any whitespace
 // at the start and/or end of str is trimmed. It returns an empty [NamedValue]
 // when the provided str, after trimming, begins with #.
 func Parse(str string) (NamedValue, error) {

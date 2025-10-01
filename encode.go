@@ -65,7 +65,7 @@ func (e *Encoder) WithOptions(opts EncodeOptions) *Encoder {
 	return e
 }
 
-// WithTagOptions changes the internal [TagOptions] to opts.
+// WithTagOptions sets TagOptions to the provided [TagOptions] opts.
 func (e *Encoder) WithTagOptions(opts TagOptions) *Encoder {
 	e.TagOptions = opts
 	return e

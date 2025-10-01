@@ -76,7 +76,7 @@ func (d *Decoder) Strict() *Decoder {
 	return d
 }
 
-// WithLookupper changes the internal [Lookupper] to l.
+// WithLookupper sets the internal [Lookupper] to l.
 func (d *Decoder) WithLookupper(l Lookupper) *Decoder {
 	if l == nil {
 		panic(panicNilLookupper)
@@ -86,13 +86,13 @@ func (d *Decoder) WithLookupper(l Lookupper) *Decoder {
 	return d
 }
 
-// WithOptions changes the internal [DecodeOptions] to opts.
+// WithOptions sets DecodeOptions to the provided [DecodeOptions] opts.
 func (d *Decoder) WithOptions(opts DecodeOptions) *Decoder {
 	d.DecodeOptions = opts
 	return d
 }
 
-// WithTagOptions changes the internal [TagOptions] to opts.
+// WithTagOptions sets TagOptions to the provided [TagOptions] opts.
 func (d *Decoder) WithTagOptions(opts TagOptions) *Decoder {
 	d.TagOptions = opts
 	return d
