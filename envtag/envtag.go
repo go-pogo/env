@@ -13,7 +13,7 @@ type Tag struct {
 	// Name of the tag which will be used to construct the environment
 	// variable's full name.
 	Name string
-	// Default is an optional default value for the field.
+	// Default is an optional default value for the environment variable.
 	Default string
 	// Ignore indicates the field should be ignored.
 	Ignore bool

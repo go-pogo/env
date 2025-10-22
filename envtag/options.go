@@ -22,13 +22,13 @@ func (fn NormalizerFunc) Normalize(fieldName, prefix string) string {
 type Options struct {
 	// EnvKey is used to look up the env tag string from a [reflect.StructTag].
 	EnvKey string
-	// DefaultKey is used to look up the default value string from a
+	// DefaultKey is used to look up an optional default value string from a
 	// [reflect.StructTag].
 	DefaultKey string
 	// Normalizer is used to normalize a [reflect.StructField]'s name
 	// when no name is provided in the env tag string.
 	Normalizer Normalizer
-	// StrictTags ignores fields that do not have an env tag when set to true.
+	// StrictTags ignores fields that do not have an env tag, when set to true.
 	StrictTags bool
 }
 
