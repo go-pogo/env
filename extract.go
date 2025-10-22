@@ -49,14 +49,11 @@ func (ex *Extractor) Extract(v any) (map[string]any, error) {
 	trav := &traverser{
 		TagOptions:  ex.TagOptions,
 		isKnownType: typeKnownByUnmarshaler,
-		handleField: func(rv reflect.Value, tag envtag.Tag) error {
+		handleField: func(rv reflect.Value, tag envtag.Tag) (err error) {
 			if rv.IsZero() && tag.Default != "" {
-				ptr := reflect.New(rv.Type())
-				if err := unmarshaler.Unmarshal(tag.DefaultValue(), ptr); err != nil {
+				if rv, err = defaultValue(rv.Type(), tag.DefaultValue()); err != nil {
 					return err
 				}
-
-				rv = ptr.Elem()
 			}
 
 			res[tag.Name] = rv.Interface()

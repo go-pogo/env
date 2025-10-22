@@ -166,20 +166,16 @@ func (e *Encoder) Encode(v any) (err error) {
 }
 
 func (e *Encoder) encodeField(rv reflect.Value, tag envtag.Tag) error {
-	if !e.TakeValues {
-		if tag.Default != "" {
-			return e.print(tag.Name, tag.Default)
-		}
+	if !e.TakeValues && tag.Default == "" {
 		return e.print(tag.Name, reflect.New(rv.Type()).Elem())
 	}
-	if rv.IsZero() && tag.Default != "" {
-		ptr := reflect.New(rv.Type())
-		if err := unmarshaler.Unmarshal(tag.DefaultValue(), ptr); err != nil {
+	if tag.Default != "" && (!e.TakeValues || (e.TakeValues && rv.IsZero())) {
+		var err error
+		if rv, err = defaultValue(rv.Type(), tag.DefaultValue()); err != nil {
 			return err
 		}
-
-		rv = ptr.Elem()
 	}
+
 	return e.print(tag.Name, rv)
 }
 
@@ -193,4 +189,10 @@ func (e *Encoder) print(name string, val any) error {
 	}
 
 	return nil
+}
+
+func defaultValue(t reflect.Type, v Value) (reflect.Value, error) {
+	ptr := reflect.New(t)
+	err := unmarshaler.Unmarshal(v, ptr)
+	return ptr.Elem(), err
 }
