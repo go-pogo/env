@@ -43,7 +43,7 @@ func (t *traverser) traverse(pv reflect.Value, prefix string, include bool) erro
 		if kind == reflect.Invalid || kind == reflect.Uintptr || kind == reflect.Chan || kind == reflect.Func || kind == reflect.UnsafePointer {
 			// unsupported types
 			continue
-		} else if kind == reflect.Ptr {
+		} else if kind == reflect.Pointer {
 			panic(panicPtr)
 		}
 
@@ -88,14 +88,14 @@ func (t *traverser) traverse(pv reflect.Value, prefix string, include bool) erro
 
 // underlyingKind resolves the underlying reflect.Kind of typ.
 func underlyingKind(typ reflect.Type) reflect.Kind {
-	if k := typ.Kind(); k != reflect.Ptr {
+	if k := typ.Kind(); k != reflect.Pointer {
 		return k
 	}
 	return underlyingKind(typ.Elem())
 }
 
 func indirect(v reflect.Value) reflect.Value {
-	for v.Kind() == reflect.Ptr {
+	for v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			// create a pointer to the type v points to
 			v.Set(reflect.New(v.Type().Elem()))

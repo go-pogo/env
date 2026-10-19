@@ -56,7 +56,7 @@ func BenchmarkUnderlyingKind(b *testing.B) {
 //go:noinline
 func loopUnderlyingKind(rt reflect.Type) reflect.Kind {
 	k := rt.Kind()
-	for k == reflect.Ptr {
+	for k == reflect.Pointer {
 		rt = rt.Elem()
 		k = rt.Kind()
 	}
@@ -65,7 +65,7 @@ func loopUnderlyingKind(rt reflect.Type) reflect.Kind {
 
 //go:noinline
 func recursiveUnderlyingKind(rt reflect.Type) reflect.Kind {
-	if k := rt.Kind(); k != reflect.Ptr {
+	if k := rt.Kind(); k != reflect.Pointer {
 		return k
 	}
 	return recursiveUnderlyingKind(rt.Elem())
