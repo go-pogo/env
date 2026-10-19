@@ -13,7 +13,7 @@ const ErrNotFound errors.Msg = "not found"
 
 // IsNotFound tests whether the provided error is [ErrNotFound].
 func IsNotFound(err error) bool {
-	return errors.Is(errors.Unembed(err), ErrNotFound)
+	return errors.Is(err, ErrNotFound)
 }
 
 type Lookupper interface {
